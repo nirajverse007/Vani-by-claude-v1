@@ -1084,17 +1084,24 @@ async function sendMsg() {
 
   if(chat.messages.length===0){chat.title=(txt||'Image').slice(0,36)+(txt.length>36?'…':'');renderSidebar();}
 
+  // Image ko pehle save kar lo — remove baad mein
+  const imgData = img ? {data: img.data, type: img.type} : null;
+  const imgSrc = imgData ? `data:${imgData.type};base64,${imgData.data}` : null;
+
   let userContent;
-  if(img){
-    userContent=[{type:'text',text:txt||'Is image ke baare mein batao'},{type:'image_url',image_url:{url:`data:${img.type};base64,${img.data}`}}];
+  if(imgData){
+    userContent=[{type:'text',text:txt||'Is image ke baare mein batao'},{type:'image_url',image_url:{url:imgSrc}}];
   } else {
     userContent=txt;
   }
-  chat.messages.push({role:'user',content:userContent,imgSrc:img?`data:${img.type};base64,${img.data}`:null});
+  chat.messages.push({role:'user',content:userContent,imgSrc:imgSrc});
 
   document.getElementById('txt-input').value='';
   document.getElementById('txt-input').style.height='auto';
-  app.removeImg();
+  // UI se remove karo — data already save ho gayi
+  S.currentImg = null;
+  document.getElementById('img-preview-area').style.display='none';
+  document.getElementById('img-preview-thumb').src='';
 
   const aiId='m-'+Date.now();
   chat.messages.push({role:'assistant',content:'',id:aiId,streaming:true});
@@ -1113,7 +1120,7 @@ async function sendMsg() {
   const apiMsgs=[{role:'system',content:finalSys},...chat.messages.filter(m=>m.id!==aiId&&!(m.streaming&&!m.content)).map(m=>({role:m.role,content:m.content}))];
 
   try {
-    const {res,model}=await callAPI(apiMsgs,!!img);
+    const {res,model}=await callAPI(apiMsgs,!!imgData);
     const reader=res.body.getReader();
     const dec=new TextDecoder();
     let full='';
