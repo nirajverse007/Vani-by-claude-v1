@@ -1004,6 +1004,18 @@ function speakText(btn, text, speed) {
   setTimeout(speakNext, 300);
 }
 
+// ---- TTS BUTTON HANDLER ----
+function handleTTS(btn) {
+  const bar = btn.closest('.tts-bar');
+  const sel = bar ? bar.querySelector('.tts-speed') : null;
+  const speed = sel ? sel.value : '0.9';
+  // Text dhundho — parent bubble mein prose se
+  const bubble = btn.closest('.msg-bubble');
+  const prose = bubble ? bubble.querySelector('.prose') : null;
+  const text = prose ? prose.innerText || prose.textContent : '';
+  if(text) speakText(btn, text, speed);
+}
+
 // ---- SPEECH RECOGNITION ----
 let SR=null, isRec=false;
 function initSR() {
@@ -1219,17 +1231,19 @@ function renderChat() {
     if(msg.streaming&&!msg.content){
       bodyHtml=`<div class="msg-bubble bubble-vani"><div class="typing-dots"><div class="td td1"></div><div class="td td2"></div><div class="td td3"></div></div></div>`;
     } else {
-      const visible=(msg.content||'').split('\n').filter(l=>!l.trim().startsWith('VANI_MEM:')).join('\n');
-      let content='';
-      if(isU&&msg.imgSrc) content+=`<img class="msg-img" src="${msg.imgSrc}">`;
       if(isU){
-        const txtContent=typeof msg.content==='string'?msg.content:(Array.isArray(msg.content)?msg.content.find(x=>x.type==='text')?.text||'':'');
-        if(msg.imgSrc) content+=`<img class="msg-img" src="${msg.imgSrc}" style="max-width:200px;border-radius:10px;margin-bottom:6px;display:block;">`;
-        if(txtContent) content+=`<div>${esc(txtContent)}</div>`;
-        bodyHtml=`<div class="msg-bubble bubble-user">${content}</div>`;
+        const txtContent = typeof msg.content==='string' ? msg.content
+          : (Array.isArray(msg.content) ? (msg.content.find(x=>x.type==='text')?.text||'') : '');
+        let content='';
+        if(msg.imgSrc) content += '<img class="msg-img" src="'+msg.imgSrc+'" style="max-width:200px;border-radius:10px;margin-bottom:6px;display:block;">';
+        if(txtContent) content += '<div>'+esc(txtContent)+'</div>';
+        bodyHtml = '<div class="msg-bubble bubble-user">'+content+'</div>';
       } else {
+        const visible=(msg.content||'').split('\n').filter(l=>!l.trim().startsWith('VANI_MEM:')).join('\n');
         const proseClass='prose'+(msg.streaming?' stream-cursor':'');
-        bodyHtml=`<div class="msg-bubble bubble-vani"><div class="${proseClass}">${renderMd(visible)}</div>${!msg.streaming?`<div class="tts-bar"><button class="tts-play" data-text="${esc(visible)}" onclick="speakText(this,this.dataset.text,this.nextElementSibling.value)">▶</button><select class="tts-speed"><option value="0.7">🐢</option><option value="0.9" selected>▶</option><option value="1.2">🐇</option></select><span style="font-size:11px;opacity:0.7;">Sunlo</span></div>`:''}${msg.model?`<div style="font-size:10px;color:var(--text2);margin-top:4px;padding-left:2px;">🤖 ${msg.model.split('/').pop().replace(':free','')}</div>`:''}`;
+        const modelTag=msg.model?'<div style="font-size:10px;color:var(--text2);margin-top:4px;">🤖 '+msg.model.split('/').pop().replace(':free','')+'</div>':'';
+        const ttsHtml=!msg.streaming?'<div class="tts-bar" id="tts-'+row.id+'"><button class="tts-play" onclick="handleTTS(this)">▶</button><select class="tts-speed"><option value="0.7">🐢</option><option value="0.9" selected>▶</option><option value="1.2">🐇</option></select><span style="font-size:11px;opacity:0.7;">Sunlo</span></div>':'';
+        bodyHtml='<div class="msg-bubble bubble-vani"><div class="'+proseClass+'">'+renderMd(visible)+'</div>'+ttsHtml+modelTag+'</div>';
       }
     }
     row.innerHTML=`<div class="msg-av ${isU?'av-user':'av-vani'}">${isU?'👤':'V'}</div><div class="msg-body"><div class="msg-label">${isU?'Sir':'Vani'}</div>${bodyHtml}</div>`;
