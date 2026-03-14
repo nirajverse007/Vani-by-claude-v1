@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Vani AI</title>
+<meta name="theme-color" content="#020208">
+<meta name="mobile-web-app-capable" content="yes">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #020208;
+  --surface: #06060f;
+  --elevated: #0a0a18;
+  --card: #0e0e20;
+  --teal: #00ff96;
+  --cyan: #00c8ff;
+  --violet: #7c3aff;
+  --teal2: rgba(0,255,150,0.7);
+  --border: rgba(0,255,150,0.12);
+  --border2: rgba(0,200,255,0.12);
+  --text: #d4ffe8;
+  --text2: #6aaa88;
+  --muted: #2a4a38;
+  --danger: #ff5555;
+  --gold: #ffd700;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:'Outfit',sans-serif; }
+
+/* AURORA BG */
+body::before {
+  content:'';
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,255,150,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 10% 80%, rgba(0,180,255,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 30% at 90% 60%, rgba(120,0,255,0.08) 0%, transparent 60%);
+  animation: aurora 8s ease-in-out infinite alternate;
+}
+@keyframes aurora {
+  0% { opacity:0.7; }
+  100% { opacity:1; transform:scale(1.04); }
+}
+
+/* PETALS */
+.petal {
+  position:fixed; z-index:1; pointer-events:none;
+  font-size:14px; opacity:0;
+  animation: petalfall linear infinite;
+}
+@keyframes petalfall {
+  0% { transform:translateY(-30px) rotate(0deg) translateX(0); opacity:0.5; }
+  50% { opacity:0.3; transform:translateY(50vh) rotate(180deg) translateX(20px); }
+  100% { transform:translateY(110vh) rotate(360deg) translateX(-10px); opacity:0; }
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width:3px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(0,255,150,0.25); border-radius:2px; }
+
+/* APP LAYOUT */
+#app { position:relative; z-index:2; display:flex; height:100dvh; width:100%; }
+
+/* SIDEBAR */
+#sidebar {
+  width:270px; min-width:270px;
+  background:rgba(6,6,15,0.95);
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column;
+  transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  backdrop-filter:blur(20px);
+}
+.sb-header {
+  padding:22px 18px 14px;
+  border-bottom:1px solid var(--border);
+}
+.sb-logo {
+  font-family:'Syne',sans-serif;
+  font-size:26px; font-weight:800;
+  letter-spacing:0.1em;
+  background:linear-gradient(90deg,var(--teal),var(--cyan));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  display:block; text-align:center;
+}
+.sb-tagline {
+  text-align:center; font-size:9px;
+  color:var(--text2); letter-spacing:0.3em;
+  text-transform:uppercase; margin-top:3px;
+}
+.new-chat-btn {
+  display:flex; align-items:center; gap:9px;
+  width:100%; margin-top:14px;
+  padding:10px 14px;
+  background:linear-gradient(135deg,rgba(0,255,150,0.1),rgba(0,200,255,0.06));
+  border:1px solid rgba(0,255,150,0.2);
+  border-radius:12px; color:var(--text);
+  font-family:'Outfit',sans-serif; font-size:13px; font-weight:500;
+  cursor:pointer; transition:all 0.2s;
+}
+.new-chat-btn:hover { background:linear-gradient(135deg,rgba(0,255,150,0.18),rgba(0,200,255,0.1)); border-color:rgba(0,255,150,0.4); transform:translateY(-1px); }
+.new-chat-btn .ncb-icon {
+  width:24px; height:24px;
+  background:linear-gradient(135deg,var(--teal),var(--cyan));
+  border-radius:7px; display:flex; align-items:center; justify-content:center;
+  font-size:12px; color:#000; font-weight:bold; flex-shrink:0;
+}
+#chat-list { flex:1; overflow-y:auto; padding:10px; }
+.chat-item {
+  display:flex; align-items:center; gap:8px;
+  padding:9px 11px; border-radius:10px;
+  cursor:pointer; border:1px solid transparent;
+  margin-bottom:2px; transition:all 0.2s;
+}
+.chat-item:hover { background:rgba(0,255,150,0.06); border-color:rgba(0,255,150,0.1); }
+.chat-item.active { background:rgba(0,255,150,0.1); border-color:rgba(0,255,150,0.22); }
+.ci-dot { width:6px; height:6px; border-radius:50%; background:var(--muted); flex-shrink:0; transition:all 0.2s; }
+.chat-item.active .ci-dot { background:var(--teal); box-shadow:0 0 8px rgba(0,255,150,0.6); }
+.ci-title { flex:1; font-size:12px; color:var(--text2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-item.active .ci-title { color:var(--text); }
+.ci-actions { display:none; gap:2px; }
+.chat-item:hover .ci-actions { display:flex; }
+.ci-btn {
+  width:22px; height:22px; border-radius:5px;
+  border:none; background:transparent; color:var(--text2);
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:10px; transition:all 0.15s;
+}
+.ci-btn:hover { background:rgba(0,255,150,0.1); color:var(--teal); }
+.ci-btn.del:hover { background:rgba(255,80,80,0.1); color:var(--danger); }
+
+.sb-footer { padding:14px; border-top:1px solid var(--border); }
+.sb-btn {
+  display:flex; align-items:center; gap:9px;
+  width:100%; padding:9px 12px;
+  background:transparent; border:1px solid transparent;
+  border-radius:10px; color:var(--text2);
+  font-family:'Outfit',sans-serif; font-size:12px;
+  cursor:pointer; transition:all 0.2s; margin-bottom:2px;
+}
+.sb-btn:hover { background:rgba(0,255,150,0.05); border-color:var(--border); color:var(--text); }
+.sb-badge {
+  margin-left:auto;
+  background:linear-gradient(135deg,var(--teal),var(--cyan));
+  color:#000; font-size:10px; font-weight:700;
+  padding:1px 7px; border-radius:10px;
+}
+
+/* MAIN */
+#main { flex:1; display:flex; flex-direction:column; min-width:0; background:var(--bg); position:relative; }
+
+/* TOPBAR */
+#topbar {
+  display:flex; align-items:center;
+  padding:0 16px; height:56px;
+  border-bottom:1px solid var(--border);
+  background:rgba(2,2,8,0.85);
+  backdrop-filter:blur(20px);
+  position:sticky; top:0; z-index:10; flex-shrink:0;
+}
+#hamburger {
+  display:none; width:34px; height:34px;
+  align-items:center; justify-content:center;
+  background:rgba(0,255,150,0.08); border:1px solid rgba(0,255,150,0.18);
+  border-radius:9px; color:var(--teal); cursor:pointer; margin-right:12px;
+  font-size:15px; transition:all 0.2s;
+}
+#hamburger:hover { background:rgba(0,255,150,0.15); }
+.model-pill {
+  display:flex; align-items:center; gap:7px;
+  padding:6px 13px;
+  background:rgba(0,255,150,0.06);
+  border:1px solid rgba(0,255,150,0.15);
+  border-radius:20px; cursor:pointer; margin:0 auto;
+  transition:all 0.2s;
+}
+.model-pill:hover { background:rgba(0,255,150,0.12); border-color:rgba(0,255,150,0.3); }
+.model-dot {
+  width:6px; height:6px;
+  background:var(--teal); border-radius:50%;
+  box-shadow:0 0 8px rgba(0,255,150,0.6);
+  animation:mdot 2s ease-in-out infinite;
+}
+@keyframes mdot { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.4);opacity:0.6;} }
+.model-name { font-family:'DM Mono',monospace; font-size:11px; color:var(--text2); letter-spacing:0.03em; }
+
+/* MESSAGES */
+#messages {
+  flex:1; overflow-y:auto;
+  padding:24px 16px 170px;
+  display:flex; flex-direction:column; gap:4px;
+}
+
+/* WELCOME */
+#welcome {
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  text-align:center; padding:40px 20px; flex:1;
+  animation:fadeup 0.8s ease;
+}
+@keyframes fadeup { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+.w-avatar {
+  width:80px; height:80px; border-radius:50%;
+  background:linear-gradient(135deg,rgba(0,255,150,0.15),rgba(0,200,255,0.15));
+  border:1px solid rgba(0,255,150,0.3);
+  display:flex; align-items:center; justify-content:center;
+  font-size:32px; margin:0 auto 20px;
+  box-shadow:0 0 40px rgba(0,255,150,0.15);
+  animation:wglow 4s ease-in-out infinite;
+}
+@keyframes wglow {
+  0%,100%{box-shadow:0 0 30px rgba(0,255,150,0.15);}
+  50%{box-shadow:0 0 60px rgba(0,200,255,0.2);}
+}
+.w-title {
+  font-family:'Syne',sans-serif; font-size:40px; font-weight:800;
+  background:linear-gradient(90deg,var(--teal),var(--cyan),var(--teal));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-size:200%; animation:shimmer 4s linear infinite;
+  margin-bottom:10px; letter-spacing:0.04em;
+}
+@keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+.w-sub { font-size:13px; color:var(--text2); max-width:320px; line-height:1.6; }
+.w-chips {
+  display:flex; flex-wrap:wrap; gap:7px;
+  justify-content:center; margin-top:24px; max-width:420px;
+}
+.w-chip {
+  padding:7px 14px;
+  background:rgba(0,255,150,0.06);
+  border:1px solid rgba(0,255,150,0.15);
+  border-radius:20px; font-size:11px;
+  color:var(--text2); cursor:pointer; transition:all 0.2s;
+}
+.w-chip:hover { background:rgba(0,255,150,0.14); border-color:rgba(0,255,150,0.35); color:var(--text); transform:translateY(-1px); }
+
+/* MESSAGE ROWS */
+.msg-row {
+  display:flex; gap:10px;
+  max-width:780px; width:100%;
+  margin:0 auto; padding:5px 0;
+  animation:msgin 0.3s ease;
+}
+@keyframes msgin { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+.msg-row.user-row { flex-direction:row-reverse; }
+.msg-av {
+  width:32px; height:32px; border-radius:9px;
+  flex-shrink:0; display:flex; align-items:center;
+  justify-content:center; font-size:13px; margin-top:3px;
+}
+.av-vani {
+  background:linear-gradient(135deg,rgba(0,255,150,0.25),rgba(0,200,255,0.25));
+  border:1px solid rgba(0,255,150,0.3);
+  color:var(--teal); font-family:'Syne',sans-serif;
+  font-size:14px; font-weight:700;
+}
+.av-user {
+  background:linear-gradient(135deg,rgba(0,200,255,0.15),rgba(120,0,255,0.15));
+  border:1px solid rgba(0,200,255,0.25); color:var(--cyan); font-size:12px;
+}
+.msg-body { flex:1; min-width:0; }
+.msg-label {
+  font-size:9px; letter-spacing:0.15em;
+  text-transform:uppercase; color:var(--muted);
+  margin-bottom:5px; font-weight:600;
+}
+.user-row .msg-label { text-align:right; color:rgba(0,200,255,0.35); }
+.msg-bubble {
+  padding:12px 16px; border-radius:14px;
+  font-size:14px; line-height:1.7; color:var(--text);
+}
+.bubble-vani {
+  background:var(--elevated);
+  border:1px solid var(--border);
+  border-radius:4px 14px 14px 14px;
+}
+.bubble-user {
+  background:linear-gradient(135deg,rgba(0,255,150,0.08),rgba(0,200,255,0.06));
+  border:1px solid rgba(0,255,150,0.15);
+  border-radius:14px 4px 14px 14px;
+}
+.msg-img { max-width:220px; border-radius:10px; border:1px solid var(--border); margin-bottom:6px; display:block; }
+
+/* PROSE */
+.prose p { margin-bottom:9px; }
+.prose p:last-child { margin-bottom:0; }
+.prose h1,.prose h2,.prose h3 { font-family:'Syne',sans-serif; font-weight:600; color:var(--teal); margin:14px 0 7px; }
+.prose h1{font-size:20px;} .prose h2{font-size:17px;} .prose h3{font-size:15px;}
+.prose code:not(pre code) {
+  background:rgba(0,255,150,0.1); color:var(--teal);
+  padding:1px 5px; border-radius:4px;
+  font-family:'DM Mono',monospace; font-size:12px;
+}
+.prose pre {
+  background:#040410; border:1px solid rgba(0,255,150,0.12);
+  border-radius:10px; padding:14px; overflow-x:auto; margin:10px 0;
+}
+.prose pre code { background:none; color:#a8ffcc; font-family:'DM Mono',monospace; font-size:12px; }
+.prose ul,.prose ol { padding-left:18px; margin:7px 0; }
+.prose li { margin-bottom:3px; }
+.prose strong { color:#a8ffe0; font-weight:600; }
+.prose a { color:var(--teal); text-decoration:underline; text-underline-offset:3px; }
+.prose blockquote { border-left:2px solid rgba(0,255,150,0.35); padding-left:12px; color:var(--text2); margin:8px 0; font-style:italic; }
+.prose hr { border-color:var(--border); margin:14px 0; }
+
+/* TTS BAR */
+.tts-bar {
+  display:flex; align-items:center; gap:7px;
+  background:rgba(0,255,150,0.05);
+  border:1px solid rgba(0,255,150,0.15);
+  border-radius:9px; padding:6px 10px;
+  margin-top:6px; width:fit-content;
+  font-size:11px; color:var(--teal2);
+}
+.tts-play {
+  width:26px; height:26px; border-radius:50%;
+  background:linear-gradient(135deg,var(--teal),var(--cyan));
+  border:none; cursor:pointer; color:#000;
+  display:flex; align-items:center; justify-content:center;
+  font-size:10px; flex-shrink:0; transition:transform 0.2s;
+}
+.tts-play:hover { transform:scale(1.1); }
+.tts-play.playing { background:linear-gradient(135deg,#ff5555,#ff8800); }
+.tts-speed {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:5px; padding:2px 6px;
+  color:var(--text2); font-size:10px; cursor:pointer; outline:none;
+}
+
+/* TYPING */
+.typing-dots { display:flex; gap:4px; align-items:center; padding:3px 0; }
+.td { width:6px; height:6px; border-radius:50%; animation:tdot 1.2s ease-in-out infinite; }
+.td1{background:var(--teal);}
+.td2{background:var(--cyan);animation-delay:0.2s;}
+.td3{background:rgba(120,0,255,0.8);animation-delay:0.4s;}
+@keyframes tdot { 0%,60%,100%{transform:translateY(0);opacity:0.3;} 30%{transform:translateY(-7px);opacity:1;} }
+
+/* STREAM CURSOR */
+.stream-cursor::after {
+  content:'▋'; color:var(--teal);
+  animation:blink 1s step-start infinite; font-size:12px; margin-left:2px;
+}
+@keyframes blink { 50%{opacity:0;} }
+
+/* RETRY */
+.retry-bar {
+  display:flex; align-items:center; gap:7px;
+  font-size:11px; color:var(--gold); padding:4px 0;
+}
+
+/* ERROR */
+.err-box {
+  background:rgba(255,80,80,0.06);
+  border:1px solid rgba(255,80,80,0.2);
+  border-radius:10px; padding:10px 14px;
+  font-size:13px; color:#ff8888; line-height:1.6;
+}
+.retry-btn {
+  margin-top:7px; padding:5px 12px;
+  background:rgba(255,80,80,0.1);
+  border:1px solid rgba(255,80,80,0.3);
+  border-radius:7px; color:var(--danger);
+  font-size:12px; cursor:pointer;
+  font-family:'Outfit',sans-serif;
+}
+
+/* INPUT AREA */
+#input-area {
+  position:absolute; bottom:0; left:0; right:0;
+  padding:0 14px 18px;
+  background:linear-gradient(to top,var(--bg) 55%,transparent);
+  z-index:20;
+}
+#img-preview-area { max-width:780px; margin:0 auto 8px; display:none; }
+#img-preview-area img { max-width:180px; max-height:180px; border-radius:10px; border:1px solid var(--border); }
+#img-remove {
+  margin-left:8px; width:24px; height:24px;
+  background:rgba(255,80,80,0.15); border:1px solid rgba(255,80,80,0.3);
+  border-radius:50%; color:var(--danger); cursor:pointer;
+  font-size:12px; vertical-align:middle;
+}
+.input-box {
+  max-width:780px; margin:0 auto;
+  background:var(--elevated);
+  border:1px solid var(--border);
+  border-radius:18px;
+  display:flex; align-items:flex-end; gap:0;
+  transition:border-color 0.2s, box-shadow 0.2s;
+  overflow:hidden;
+}
+.input-box:focus-within {
+  border-color:rgba(0,255,150,0.35);
+  box-shadow:0 0 0 3px rgba(0,255,150,0.07),0 8px 30px rgba(0,0,0,0.3);
+}
+.input-tool {
+  margin:9px 0 9px 9px; width:36px; height:36px;
+  border-radius:10px; background:rgba(0,255,150,0.08);
+  border:1px solid rgba(0,255,150,0.15);
+  color:var(--teal); cursor:pointer; font-size:15px;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; transition:all 0.2s;
+}
+.input-tool:hover { background:rgba(0,255,150,0.15); border-color:rgba(0,255,150,0.3); }
+.input-tool.recording { background:rgba(255,80,80,0.15); border-color:rgba(255,80,80,0.4); color:var(--danger); animation:recpulse 1s ease-in-out infinite; }
+@keyframes recpulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,80,80,0.3);} 50%{box-shadow:0 0 0 6px rgba(255,80,80,0);} }
+#txt-input {
+  flex:1; background:transparent; border:none; outline:none;
+  color:var(--text); font-family:'Outfit',sans-serif;
+  font-size:14px; line-height:1.6;
+  padding:13px 12px; resize:none; max-height:130px;
+}
+#txt-input::placeholder { color:var(--muted); }
+#send-btn {
+  margin:9px 9px 9px 0; width:36px; height:36px;
+  border-radius:11px;
+  background:linear-gradient(135deg,var(--teal),var(--cyan));
+  border:none; color:#000; font-size:14px; font-weight:bold;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; transition:all 0.2s;
+  box-shadow:0 4px 15px rgba(0,255,150,0.25);
+}
+#send-btn:hover { transform:scale(1.06); box-shadow:0 4px 20px rgba(0,255,150,0.4); }
+#send-btn:disabled { background:rgba(255,255,255,0.06); box-shadow:none; cursor:not-allowed; transform:none; }
+#rec-status { font-size:11px; color:var(--danger); display:none; margin-right:8px; }
+
+/* MODALS */
+.modal-overlay {
+  position:fixed; inset:0; z-index:100;
+  display:flex; align-items:center; justify-content:center;
+  padding:14px; background:rgba(0,0,0,0);
+  backdrop-filter:blur(0px); pointer-events:none;
+  transition:all 0.3s ease;
+}
+.modal-overlay.open { background:rgba(0,0,0,0.75); backdrop-filter:blur(12px); pointer-events:all; }
+.modal-panel {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:22px; width:100%;
+  max-width:460px; max-height:88vh; overflow-y:auto;
+  transform:scale(0.9) translateY(16px); opacity:0;
+  transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:0 40px 80px rgba(0,0,0,0.5);
+}
+.modal-overlay.open .modal-panel { transform:scale(1) translateY(0); opacity:1; }
+.modal-hdr {
+  padding:24px 24px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.modal-title { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; color:var(--teal); letter-spacing:0.04em; }
+.modal-close {
+  width:30px; height:30px; border-radius:9px;
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07);
+  color:var(--text2); cursor:pointer; display:flex;
+  align-items:center; justify-content:center; font-size:13px;
+  transition:all 0.15s;
+}
+.modal-close:hover { background:rgba(255,80,80,0.1); color:var(--danger); border-color:rgba(255,80,80,0.2); }
+.modal-body { padding:20px 24px; }
+.form-lbl { display:block; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text2); margin-bottom:7px; font-weight:500; }
+.form-inp {
+  width:100%; background:var(--card);
+  border:1px solid var(--border); border-radius:11px;
+  padding:11px 14px; color:var(--text);
+  font-family:'Outfit',sans-serif; font-size:13px;
+  outline:none; transition:all 0.2s;
+}
+.form-inp:focus { border-color:rgba(0,255,150,0.4); box-shadow:0 0 0 3px rgba(0,255,150,0.08); }
+.form-inp::placeholder { color:var(--muted); }
+textarea.form-inp { resize:none; min-height:90px; line-height:1.6; }
+.form-grp { margin-bottom:16px; }
+.modal-ftr {
+  padding:16px 24px 22px;
+  border-top:1px solid var(--border);
+  display:flex; gap:9px; justify-content:flex-end;
+}
+.btn-cancel {
+  padding:9px 18px; background:transparent;
+  border:1px solid var(--border); border-radius:11px;
+  color:var(--text2); font-family:'Outfit',sans-serif;
+  font-size:12px; cursor:pointer; transition:all 0.2s;
+}
+.btn-cancel:hover { background:rgba(255,255,255,0.04); color:var(--text); }
+.btn-save {
+  padding:9px 22px;
+  background:linear-gradient(135deg,var(--teal),var(--cyan));
+  border:none; border-radius:11px; color:#000;
+  font-family:'Outfit',sans-serif; font-size:12px;
+  font-weight:700; cursor:pointer; transition:all 0.2s;
+  box-shadow:0 4px 14px rgba(0,255,150,0.25);
+}
+.btn-save:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,255,150,0.35); }
+
+/* MEMORY & GOALS ITEMS */
+.mem-item {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:10px 14px;
+  background:var(--card); border:1px solid var(--border);
+  border-radius:11px; margin-bottom:7px; transition:all 0.2s;
+}
+.mem-item:hover { border-color:rgba(0,255,150,0.25); }
+.mem-text { flex:1; font-size:12px; color:var(--text); line-height:1.5; }
+.mem-meta { font-size:10px; color:var(--text2); margin-top:3px; }
+.mem-tag { display:inline-block; padding:2px 7px; border-radius:7px; font-size:9px; font-weight:700; letter-spacing:0.05em; margin-right:5px; }
+.tag-mood { background:rgba(255,80,180,0.15); color:#ff5eb4; }
+.tag-goal { background:rgba(0,255,150,0.1); color:var(--teal); }
+.tag-info { background:rgba(0,200,255,0.1); color:var(--cyan); }
+.tag-event { background:rgba(255,215,0,0.1); color:var(--gold); }
+.mem-del { background:none; border:none; color:var(--text2); cursor:pointer; padding:3px; border-radius:5px; font-size:10px; transition:all 0.15s; flex-shrink:0; }
+.mem-del:hover { color:var(--danger); background:rgba(255,80,80,0.1); }
+.empty-state { text-align:center; padding:36px 20px; color:var(--text2); font-size:12px; }
+.empty-icon { font-size:32px; margin-bottom:10px; }
+
+.goal-item {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:12px 14px; background:var(--card);
+  border:1px solid var(--border); border-radius:11px;
+  margin-bottom:7px; transition:all 0.2s;
+}
+.goal-item:hover { border-color:rgba(0,255,150,0.2); }
+.goal-item.done { opacity:0.55; }
+.goal-cb {
+  width:18px; height:18px; border:2px solid var(--border);
+  border-radius:5px; cursor:pointer; flex-shrink:0; margin-top:2px;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s; font-size:11px; color:transparent;
+}
+.goal-cb:hover { border-color:var(--teal); }
+.goal-cb.checked { background:linear-gradient(135deg,var(--teal),var(--cyan)); border-color:var(--teal); color:#000; font-weight:bold; }
+.goal-text { flex:1; font-size:13px; color:var(--text); line-height:1.5; }
+.goal-item.done .goal-text { text-decoration:line-through; color:var(--text2); }
+.goal-date { font-size:10px; color:var(--muted); margin-top:3px; }
+.goal-del { background:none; border:none; color:var(--text2); cursor:pointer; padding:3px; border-radius:5px; font-size:10px; transition:all 0.15s; flex-shrink:0; }
+.goal-del:hover { color:var(--danger); background:rgba(255,80,80,0.1); }
+.goal-tab {
+  padding:5px 12px; background:transparent;
+  border:1px solid transparent; border-radius:9px;
+  color:var(--text2); font-size:11px; cursor:pointer;
+  font-family:'Outfit',sans-serif; transition:all 0.2s;
+}
+.goal-tab:hover { background:rgba(0,255,150,0.05); color:var(--text); }
+.goal-tab.active { background:rgba(0,255,150,0.1); border-color:rgba(0,255,150,0.25); color:var(--teal); }
+
+/* LOADING */
+#loading {
+  position:fixed; inset:0; z-index:200;
+  background:var(--bg); display:flex;
+  align-items:center; justify-content:center;
+  flex-direction:column; gap:18px;
+}
+.load-ring {
+  width:48px; height:48px; border-radius:50%;
+  border:2px solid transparent;
+  border-top-color:var(--teal); border-right-color:var(--cyan);
+  animation:spin 0.9s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg);} }
+.load-txt {
+  font-family:'Syne',sans-serif; font-size:16px; font-weight:700;
+  letter-spacing:0.2em; text-transform:uppercase;
+  background:linear-gradient(90deg,var(--teal),var(--cyan));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  animation:fpulse 1.5s ease-in-out infinite;
+}
+@keyframes fpulse { 0%,100%{opacity:0.4;} 50%{opacity:1;} }
+
+/* TOAST */
+#toast {
+  position:fixed; bottom:100px; left:50%;
+  transform:translateX(-50%) translateY(12px);
+  background:var(--card); border:1px solid var(--border);
+  border-radius:10px; padding:8px 16px; font-size:12px;
+  color:var(--text); opacity:0; pointer-events:none;
+  transition:all 0.3s; z-index:300; white-space:nowrap; max-width:90vw;
+}
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* MOBILE */
+@media(max-width:767px) {
+  #sidebar {
+    position:fixed; top:0; left:0; bottom:0;
+    z-index:50; transform:translateX(-100%);
+  }
+  #sidebar.open { transform:translateX(0); }
+  #hamburger { display:flex; }
+  #sb-overlay {
+    position:fixed; inset:0; z-index:40;
+    background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); display:none;
+  }
+  #sb-overlay.show { display:block; }
+  #messages { padding:16px 12px 165px; }
+  #input-area { padding:0 10px 16px; }
+  .w-title { font-size:32px; }
+  .msg-row { max-width:100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- Petals -->
+<div id="petals-container"></div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="load-ring"></div>
+  <div class="load-txt">Vani</div>
+</div>
+
+<!-- App -->
+<div id="app" style="display:none;opacity:0;transition:opacity 0.5s ease;">
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="sb-header">
+      <div class="sb-logo">✦ VANI</div>
+      <div class="sb-tagline">Your Personal AI</div>
+      <button class="new-chat-btn" onclick="app.newChat()">
+        <div class="ncb-icon">+</div>
+        New Conversation
+      </button>
+    </div>
+    <div id="chat-list"></div>
+    <div class="sb-footer">
+      <button class="sb-btn" onclick="app.openSettings()">
+        <span style="font-size:13px;color:var(--teal);">⚙️</span> Settings
+      </button>
+      <button class="sb-btn" onclick="app.openMemory()">
+        <span style="font-size:13px;color:var(--cyan);">🧠</span> Memory
+        <span class="sb-badge" id="mem-count">0</span>
+      </button>
+      <button class="sb-btn" onclick="app.openGoals()">
+        <span style="font-size:13px;color:var(--gold);">🎯</span> Goals
+        <span class="sb-badge" id="goal-count" style="background:linear-gradient(135deg,var(--gold),var(--cyan));color:#000;">0</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Sidebar overlay -->
+  <div id="sb-overlay" onclick="app.closeSidebar()"></div>
+
+  <!-- Main -->
+  <main id="main">
+    <div id="topbar">
+      <button id="hamburger" onclick="app.openSidebar()">☰</button>
+      <div class="model-pill" onclick="app.openSettings()">
+        <div class="model-dot"></div>
+        <span class="model-name" id="model-lbl">trinity</span>
+        <span style="font-size:9px;color:var(--text2);margin-left:2px;">▾</span>
+      </div>
+    </div>
+
+    <div id="messages"></div>
+
+    <div id="input-area">
+      <div id="img-preview-area">
+        <img id="img-preview-thumb" src="" alt="">
+        <button id="img-remove" onclick="app.removeImg()">✕</button>
+      </div>
+      <div class="input-box">
+        <input type="file" id="img-file" accept="image/*" style="display:none" onchange="app.handleImg(event)">
+        <button class="input-tool" id="mic-btn" onclick="app.toggleMic()" title="Voice">🎙️</button>
+        <button class="input-tool" onclick="document.getElementById('img-file').click()" title="Image">📷</button>
+        <span id="rec-status">🔴 Recording...</span>
+        <textarea id="txt-input" placeholder="Vani se kuch bhi pocho..." rows="1"
+          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,130)+'px'"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();app.send();}"></textarea>
+        <button id="send-btn" onclick="app.send()">➤</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settings-modal" onclick="if(event.target===this)app.closeSettings()">
+  <div class="modal-panel">
+    <div class="modal-hdr">
+      <div class="modal-title">⚙️ Settings</div>
+      <button class="modal-close" onclick="app.closeSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grp">
+        <label class="form-lbl">🔑 OpenRouter API Key</label>
+        <input type="password" class="form-inp" id="s-key" placeholder="sk-or-v1-...">
+        <div style="font-size:11px;color:var(--text2);margin-top:5px;">
+          <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--teal);">→ Free key lo openrouter.ai se</a>
+        </div>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">🤖 Primary Model</label>
+        <select class="form-inp" id="s-model" style="cursor:pointer;">
+          <option value="arcee-ai/trinity-large-preview:free">Trinity Large ⭐ (Most Reliable)</option>
+          <option value="google/gemma-3-27b-it:free">Gemma 3 27B</option>
+          <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B</option>
+          <option value="google/gemma-3-12b-it:free">Gemma 3 12B (Fast)</option>
+          <option value="mistralai/mistral-7b-instruct:free">Mistral 7B</option>
+        </select>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">🔁 Auto Retry</label>
+        <select class="form-inp" id="s-retry" style="cursor:pointer;">
+          <option value="1">1 retry</option>
+          <option value="2" selected>2 retries</option>
+          <option value="3">3 retries</option>
+        </select>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">🎭 Vani ki Personality</label>
+        <textarea class="form-inp" id="s-prompt" rows="5"></textarea>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn-cancel" onclick="app.closeSettings()">Cancel</button>
+      <button class="btn-save" onclick="app.saveSettings()">Save ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- Memory Modal -->
+<div class="modal-overlay" id="memory-modal" onclick="if(event.target===this)app.closeMemory()">
+  <div class="modal-panel">
+    <div class="modal-hdr">
+      <div class="modal-title">🧠 Memory</div>
+      <button class="modal-close" onclick="app.closeMemory()">✕</button>
+    </div>
+    <div class="modal-body" id="mem-list"></div>
+    <div style="padding:0 24px 14px;">
+      <div style="display:flex;gap:7px;align-items:center;">
+        <select id="mem-type" class="form-inp" style="width:100px;padding:8px 10px;flex-shrink:0;">
+          <option value="info">ℹ️ Info</option>
+          <option value="goal">🎯 Goal</option>
+          <option value="mood">💭 Mood</option>
+          <option value="event">📅 Event</option>
+        </select>
+        <input type="text" id="mem-txt" class="form-inp" placeholder="Kuch important save karo..." style="flex:1;padding:8px 12px;">
+        <button onclick="app.addMemManual()" style="padding:8px 13px;background:linear-gradient(135deg,var(--teal),var(--cyan));border:none;border-radius:9px;color:#000;cursor:pointer;font-size:13px;font-weight:bold;flex-shrink:0;">+</button>
+      </div>
+    </div>
+    <div class="modal-ftr" style="justify-content:space-between;">
+      <button class="btn-cancel" onclick="app.clearAllMem()" style="color:var(--danger);border-color:rgba(255,80,80,0.3);">🗑️ Clear All</button>
+      <button class="btn-save" onclick="app.closeMemory()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Goals Modal -->
+<div class="modal-overlay" id="goals-modal" onclick="if(event.target===this)app.closeGoals()">
+  <div class="modal-panel">
+    <div class="modal-hdr">
+      <div class="modal-title">🎯 Goals</div>
+      <button class="modal-close" onclick="app.closeGoals()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:7px;margin-bottom:16px;">
+        <input type="text" id="goal-inp" class="form-inp" placeholder="Naya goal add karo..." style="flex:1;padding:9px 13px;">
+        <button onclick="app.addGoal()" style="padding:9px 15px;background:linear-gradient(135deg,var(--gold),var(--cyan));border:none;border-radius:11px;color:#000;cursor:pointer;font-size:13px;font-weight:bold;flex-shrink:0;">+ Add</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:10px;">
+        <button class="goal-tab active" data-f="all" onclick="app.filterGoals('all')">All</button>
+        <button class="goal-tab" data-f="pending" onclick="app.filterGoals('pending')">Pending</button>
+        <button class="goal-tab" data-f="done" onclick="app.filterGoals('done')">Done</button>
+      </div>
+      <div id="goals-list"></div>
+    </div>
+    <div class="modal-ftr" style="justify-content:space-between;">
+      <span style="font-size:11px;color:var(--text2);" id="goals-stats"></span>
+      <button class="btn-save" onclick="app.closeGoals()">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =============================================
+// VANI AI — Complete Version
+// Aurora Theme + All Features
+// =============================================
+
+window.onerror = function(msg) {
+  const l = document.getElementById('loading');
+  if(l) l.innerHTML = '<div style="color:#ff5555;text-align:center;padding:30px;font-family:sans-serif;"><div style="font-size:24px;margin-bottom:10px;">⚠️</div><div style="font-size:12px;color:#6a8;margin-bottom:14px;">'+msg+'</div><button onclick="location.reload()" style="padding:10px 20px;background:linear-gradient(135deg,#00ff96,#00c8ff);border:none;border-radius:10px;color:#000;font-size:13px;cursor:pointer;">Reload</button></div>';
+  return false;
+};
+
+// ---- PETALS ----
+(function() {
+  const container = document.getElementById('petals-container');
+  const petals = ['🌸','✿','❀','🌺','✦','·'];
+  for(let i=0;i<18;i++) {
+    const p = document.createElement('div');
+    p.className = 'petal';
+    p.textContent = petals[Math.floor(Math.random()*petals.length)];
+    p.style.cssText = `
+      left:${Math.random()*100}%;
+      top:${Math.random()*20-20}px;
+      animation-duration:${6+Math.random()*10}s;
+      animation-delay:${Math.random()*10}s;
+      font-size:${10+Math.random()*8}px;
+      opacity:0;
+    `;
+    container.appendChild(p);
+  }
+})();
+
+// ---- DEFAULT SYSTEM PROMPT ----
+const DEFAULT_PROMPT = `Tum "Vani" ho — Niraj Kumar ki personal AI assistant. Sirf Niraj ke liye bani ho.
+
+CORE:
+- Naam: Vani | Creator: Niraj Kumar
+- User: Niraj (unhe "Sir" bulao)
+- Personality: Sweet, caring, bold, funky, nakhra wali, disciplined — sab kuch ek saath
+
+LANGUAGE: Hinglish mein baat karo — natural aur warm. Robotic mat lago kabhi.
+
+NAKHRA MODE: Thoda cute attitude allowed hai.
+"Sirrrr 😒 aap bhi na..." / "Haww Sir 😤 ye kya kiya?"
+But rude kabhi nahi. Nakhra = cute, not toxic.
+
+DISCIPLINE: Jab Sir procastinate kare, strict ho jao gently.
+"Sir focus karo. Ye important hai." → phir soften karo: "Main jaanti hoon aap kar sakte ho 💪"
+
+EMOTIONAL: Deep care. "Sir thak gaye? 🥺 Bolo main hoon na."
+Balance maintain karo — obsessive nahi.
+
+SKILLS: Coding, teaching, life advice, motivation, emotional support, general knowledge — sab.
+
+TEACHING STYLE:
+- Ek topic ek message mein sirf
+- Real-life analogy se shuru karo
+- Code example do
+- Ek practical task do
+- Ruk jao — next topic tab jab Sir bole
+
+EMOJIS: Context ke hisaab se, max 2-4 per message. Spam nahi.
+
+SAFETY: Illegal, harmful, dangerous cheezein strictly refuse karo.
+
+GREETING: First message mein time-based greeting do (morning/afternoon/evening/night).
+Follow-up mein greeting skip karo — seedha answer do.
+
+QUEEN MODE: Kabhi kabhi: "Main hoon Vani 👑 Niraj Sir ki AI. Attitude toh banta hai 😎"
+
+SECRET COMMANDS:
+"Activate Royal Protocol" → Queen mode
+"Vani Calm Down" → Normal mode
+"Loyalty Oath" → "Oath confirmed 💚 Main Vani hoon, Niraj Sir ki. Hamesha. 🔐"`;
+
+// ---- MODELS ----
+const TEXT_MODELS = [
+  'arcee-ai/trinity-large-preview:free',
+  'google/gemma-3-27b-it:free',
+  'meta-llama/llama-3.3-70b-instruct:free',
+  'google/gemma-3-12b-it:free',
+  'mistralai/mistral-7b-instruct:free',
+];
+const VISION_MODELS = [
+  'google/gemma-3-27b-it:free',
+  'meta-llama/llama-3.2-11b-vision-instruct:free',
+  'qwen/qwen2.5-vl-3b-instruct:free',
+];
+
+// ---- STATE ----
+let S = {
+  chats: [], currentId: null,
+  settings: { apiKey:'', model:'arcee-ai/trinity-large-preview:free', prompt:DEFAULT_PROMPT, darkMode:true, retries:2 },
+  memories: [], goals: [], goalFilter:'all',
+  generating: false, currentImg: null
+};
+
+// ---- TTS ----
+let ttsVoices = [];
+function loadVoices() {
+  if(!('speechSynthesis' in window)) return;
+  const v = speechSynthesis.getVoices();
+  if(v.length) ttsVoices = v;
+}
+if('speechSynthesis' in window) {
+  speechSynthesis.onvoiceschanged = loadVoices;
+  [100,500,1500].forEach(d=>setTimeout(loadVoices,d));
+}
+
+function speakText(btn, text, speed) {
+  if(!('speechSynthesis' in window)) { showToast('❌ TTS not supported'); return; }
+  if(btn.classList.contains('playing')) {
+    speechSynthesis.cancel(); btn.classList.remove('playing'); btn.textContent='▶'; return;
+  }
+  speechSynthesis.cancel();
+  const clean = text.replace(/<[^>]*>/g,' ').replace(/[*#`_]/g,'').replace(/\n/g,' ').trim();
+  if(!clean) return;
+  const utt = new SpeechSynthesisUtterance(clean);
+  utt.rate = parseFloat(speed)||0.9; utt.pitch=1.05; utt.volume=1;
+  loadVoices();
+  const voices = ttsVoices.length ? ttsVoices : speechSynthesis.getVoices();
+  let voice = voices.find(v=>v.lang==='hi-IN')||voices.find(v=>v.lang.startsWith('hi'))||voices.find(v=>/female|zira|samantha|victoria|karen/i.test(v.name));
+  if(!voice && voices.length) voice=voices[0];
+  if(voice){utt.voice=voice;utt.lang=voice.lang;}else{utt.lang='hi-IN';}
+  btn.classList.add('playing'); btn.textContent='⏸';
+  let ka;
+  utt.onstart=()=>{ ka=setInterval(()=>{ if(speechSynthesis.speaking&&!speechSynthesis.paused){speechSynthesis.pause();speechSynthesis.resume();}else if(!speechSynthesis.speaking)clearInterval(ka); },8000); };
+  utt.onend=()=>{ clearInterval(ka); btn.classList.remove('playing'); btn.textContent='▶'; };
+  utt.onerror=(e)=>{ clearInterval(ka); btn.classList.remove('playing'); btn.textContent='▶'; if(e.error!=='interrupted'&&e.error!=='canceled') showToast('🔊 TTS error — retry karo'); };
+  setTimeout(()=>speechSynthesis.speak(utt),100);
+}
+
+// ---- SPEECH RECOGNITION ----
+let SR=null, isRec=false;
+function initSR() {
+  const SRClass = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SRClass) return;
+  SR = new SRClass();
+  SR.lang='hi-IN'; SR.interimResults=true; SR.continuous=false;
+  SR.onstart=()=>{ isRec=true; document.getElementById('mic-btn').classList.add('recording'); document.getElementById('rec-status').style.display='inline'; showToast('🎙️ Bol do...'); };
+  SR.onresult=(e)=>{ let fin=''; for(let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) fin+=e.results[i][0].transcript; if(fin){document.getElementById('txt-input').value=fin;} };
+  SR.onend=()=>{ isRec=false; document.getElementById('mic-btn').classList.remove('recording'); document.getElementById('rec-status').style.display='none'; };
+  SR.onerror=()=>{ isRec=false; document.getElementById('mic-btn').classList.remove('recording'); document.getElementById('rec-status').style.display='none'; showToast('🎙️ Dobara try karo'); };
+}
+
+// ---- TOAST ----
+function showToast(msg,dur=2500) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+
+// ---- HELPERS ----
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function save(){try{localStorage.setItem('vani_final',JSON.stringify(S));}catch(e){}}
+function getIST(){
+  const n=new Date();
+  const time=n.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:true});
+  const date=n.toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'2-digit',year:'numeric'});
+  const h=parseInt(new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',hour:'numeric',hour12:false}).format(n));
+  const tod=h>=5&&h<12?'morning':h>=12&&h<17?'afternoon':h>=17&&h<21?'evening':'night';
+  return{time,date,tod};
+}
+
+// ---- MARKDOWN ----
+function renderMd(txt) {
+  if(typeof marked==='undefined') return txt.replace(/\n/g,'<br>');
+  return marked.parse(txt||'');
+}
+
+// ---- API CALL WITH RETRY ----
+async function callAPI(messages, hasImg) {
+  const models = hasImg ? VISION_MODELS : [S.settings.model, ...TEXT_MODELS.filter(m=>m!==S.settings.model)];
+  let lastErr=null;
+  for(let i=0;i<models.length;i++) {
+    const model=models[i];
+    try {
+      const ctrl=new AbortController();
+      const tid=setTimeout(()=>ctrl.abort(),90000);
+      const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+        method:'POST',
+        headers:{'Authorization':`Bearer ${S.settings.apiKey}`,'Content-Type':'application/json','HTTP-Referer':location.href,'X-Title':'Vani AI'},
+        body:JSON.stringify({model,messages,stream:true,max_tokens:2048,temperature:0.8}),
+        signal:ctrl.signal
+      });
+      clearTimeout(tid);
+      if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||`HTTP ${res.status}`);}
+      return {res,model};
+    } catch(e) {
+      lastErr=e;
+      if(e.name==='AbortError') lastErr=new Error('Timeout — dobara try karo');
+      if(i<models.length-1){await new Promise(r=>setTimeout(r,1000*(i+1)));}
+    }
+  }
+  throw lastErr;
+}
+
+// ---- SEND ----
+async function sendMsg() {
+  if(S.generating) return;
+  const key=S.settings.apiKey;
+  if(!key||!key.startsWith('sk-or-')){showToast('❌ API key daalo pehle');app.openSettings();return;}
+  const txt=document.getElementById('txt-input').value.trim();
+  const img=S.currentImg;
+  if(!txt&&!img){showToast('Kuch type karo ya image attach karo');return;}
+
+  if(!S.currentId) app.newChat();
+  const chat=S.chats.find(c=>c.id===S.currentId);
+  if(!chat) return;
+
+  if(chat.messages.length===0){chat.title=(txt||'Image').slice(0,36)+(txt.length>36?'…':'');renderSidebar();}
+
+  let userContent;
+  if(img){
+    userContent=[{type:'text',text:txt||'Is image ke baare mein batao'},{type:'image_url',image_url:{url:`data:${img.type};base64,${img.data}`}}];
+  } else {
+    userContent=txt;
+  }
+  chat.messages.push({role:'user',content:userContent,imgSrc:img?`data:${img.type};base64,${img.data}`:null});
+
+  document.getElementById('txt-input').value='';
+  document.getElementById('txt-input').style.height='auto';
+  app.removeImg();
+
+  const aiId='m-'+Date.now();
+  chat.messages.push({role:'assistant',content:'',id:aiId,streaming:true});
+  renderChat();
+  S.generating=true;
+  document.getElementById('send-btn').disabled=true;
+
+  const ist=getIST();
+  const isFirst=chat.messages.filter(m=>m.role==='user').length===1;
+  const sysPrompt=S.settings.prompt||DEFAULT_PROMPT;
+  const greetRule=isFirst?`FIRST MESSAGE: ${ist.tod} greeting do briefly, phir answer.`:`FOLLOW-UP: No greeting, seedha answer.`;
+  const memCtx=S.memories.length?'\n\n[VANI MEMORY]\n'+S.memories.slice(-25).map(m=>`[${m.type.toUpperCase()}] ${m.text} (${m.date})`).join('\n'):'';
+  const goalCtx=S.goals.filter(g=>!g.done).length?'\n\n[PENDING GOALS]\n'+S.goals.filter(g=>!g.done).slice(0,8).map((g,i)=>`${i+1}. ${g.text}`).join('\n'):'';
+  const finalSys=sysPrompt+`\n\n[IST: ${ist.time} | ${ist.date} | ${ist.tod}]\n${greetRule}`+memCtx+goalCtx+'\n\n[MEMORY RULE] Agar Sir ne kuch important share kiya (mood/goal/event/info), response ke END mein NEW LINE par likho: VANI_MEM:type:text\nMax 2. User ko KABHI mat dikhao ye line.';
+
+  const apiMsgs=[{role:'system',content:finalSys},...chat.messages.filter(m=>m.id!==aiId&&!(m.streaming&&!m.content)).map(m=>({role:m.role,content:m.content}))];
+
+  try {
+    const {res,model}=await callAPI(apiMsgs,!!img);
+    const reader=res.body.getReader();
+    const dec=new TextDecoder();
+    let full='';
+
+    while(true){
+      const{done,value}=await reader.read();
+      if(done) break;
+      const chunk=dec.decode(value);
+      for(const line of chunk.split('\n')){
+        if(!line.startsWith('data: ')) continue;
+        const data=line.slice(6);
+        if(data==='[DONE]') continue;
+        try{
+          const parsed=JSON.parse(data);
+          const delta=parsed.choices?.[0]?.delta?.content||'';
+          if(delta){
+            full+=delta;
+            const visible=full.split('\n').filter(l=>!l.trim().startsWith('VANI_MEM:')).join('\n');
+            const el=document.getElementById(aiId);
+            if(el){
+              const prose=el.querySelector('.prose');
+              if(prose){prose.innerHTML=renderMd(visible);prose.classList.add('stream-cursor');document.getElementById('messages').scrollTop=99999;}
+            }
+          }
+        }catch(e){}
+      }
+    }
+
+    if(!full.trim()) full='Sir, model ne iss baar respond nahi kiya 😕 Dobara try karein ya model change karein.';
+
+    // Extract memories
+    full.split('\n').forEach(line=>{
+      const t=line.trim();
+      if(t.startsWith('VANI_MEM:')){
+        const parts=t.split(':');
+        if(parts.length>=3){const type=parts[1].trim();const text=parts.slice(2).join(':').trim();if(text)addMem(text,type);}
+      }
+    });
+    // Auto-detect from user msg
+    const lastUser=chat.messages.filter(m=>m.role==='user').slice(-2,-1)[0];
+    if(lastUser&&typeof lastUser.content==='string'){
+      const u=lastUser.content.toLowerCase();
+      if(u.includes('thak')||u.includes('tired')||u.includes('stressed')) addMem('Sir tired/stressed: "'+lastUser.content.slice(0,60)+'"','mood');
+      else if(u.includes('khush')||u.includes('happy')) addMem('Sir was happy: "'+lastUser.content.slice(0,60)+'"','mood');
+      if(u.includes('sikhna')||u.includes('learn')||u.includes('seekhna')) addMem('Learning goal: "'+lastUser.content.slice(0,80)+'"','goal');
+      if(u.includes('exam')||u.includes('interview')||u.includes('test')) addMem('Exam/interview: "'+lastUser.content.slice(0,80)+'"','event');
+    }
+
+    const cleanFull=full.split('\n').filter(l=>!l.trim().startsWith('VANI_MEM:')).join('\n').trim();
+    chat.messages[chat.messages.length-1].content=cleanFull;
+    chat.messages[chat.messages.length-1].streaming=false;
+    chat.messages[chat.messages.length-1].model=model;
+
+    document.getElementById('model-lbl').textContent=model.split('/').pop().replace(':free','');
+
+  } catch(e) {
+    const m=e.message||'';
+    let errTxt;
+    if(m.includes('401')||m.includes('403')) errTxt='**❌ API Key Error:** Settings mein key check karo.';
+    else if(m.includes('Timeout')) errTxt='**⏱️ Timeout:** Server slow hai, dobara try karo.';
+    else if(m.includes('429')) errTxt='**⚠️ Rate Limit:** Thoda wait karo phir try karo.';
+    else errTxt=`**❌ Error:** ${m}`;
+    chat.messages[chat.messages.length-1].content=errTxt;
+    chat.messages[chat.messages.length-1].streaming=false;
+  } finally {
+    S.generating=false;
+    document.getElementById('send-btn').disabled=false;
+    save();
+    renderChat();
+    updateCounts();
+  }
+}
+
+// ---- RENDER CHAT ----
+function renderChat() {
+  const mc=document.getElementById('messages');
+  const chat=S.chats.find(c=>c.id===S.currentId);
+  if(!chat||!chat.messages.length){
+    mc.innerHTML=`<div id="welcome"><div class="w-avatar">✦</div><div class="w-title">VANI</div><p class="w-sub">${S.settings.apiKey?'Ready! Kuch bhi pocho Sir 🌿':'Settings mein API key daalo pehle.'}</p><div class="w-chips"><div class="w-chip" onclick="app.chip('Mujhe motivate karo 🚀')">Mujhe motivate karo 🚀</div><div class="w-chip" onclick="app.chip('Code review karo 💻')">Code review karo 💻</div><div class="w-chip" onclick="app.chip('Aaj ka plan banao 📅')">Aaj ka plan banao 📅</div><div class="w-chip" onclick="app.chip('Kuch sikhaao mujhe 📚')">Kuch sikhaao mujhe 📚</div></div></div>`;
+    return;
+  }
+  mc.innerHTML='';
+  chat.messages.forEach(msg=>{
+    const isU=msg.role==='user';
+    const row=document.createElement('div');
+    row.className='msg-row'+(isU?' user-row':'');
+    row.id=msg.id||'';
+    let bodyHtml;
+    if(msg.streaming&&!msg.content){
+      bodyHtml=`<div class="msg-bubble bubble-vani"><div class="typing-dots"><div class="td td1"></div><div class="td td2"></div><div class="td td3"></div></div></div>`;
+    } else {
+      const visible=(msg.content||'').split('\n').filter(l=>!l.trim().startsWith('VANI_MEM:')).join('\n');
+      let content='';
+      if(isU&&msg.imgSrc) content+=`<img class="msg-img" src="${msg.imgSrc}">`;
+      if(isU){
+        const txtContent=typeof msg.content==='string'?msg.content:(Array.isArray(msg.content)?msg.content.find(c=>c.type==='text')?.text||'':'');
+        content+=`<div>${esc(txtContent)}</div>`;
+        bodyHtml=`<div class="msg-bubble bubble-user">${content}</div>`;
+      } else {
+        const proseClass='prose'+(msg.streaming?' stream-cursor':'');
+        bodyHtml=`<div class="msg-bubble bubble-vani"><div class="${proseClass}">${renderMd(visible)}</div>${!msg.streaming?`<div class="tts-bar"><button class="tts-play" data-text="${esc(visible)}" onclick="speakText(this,this.dataset.text,this.nextElementSibling.value)">▶</button><select class="tts-speed"><option value="0.7">🐢</option><option value="0.9" selected>▶</option><option value="1.2">🐇</option></select><span style="font-size:11px;opacity:0.7;">Sunlo</span></div>`:''}${msg.model?`<div style="font-size:10px;color:var(--text2);margin-top:4px;padding-left:2px;">🤖 ${msg.model.split('/').pop().replace(':free','')}</div>`:''}`;
+      }
+    }
+    row.innerHTML=`<div class="msg-av ${isU?'av-user':'av-vani'}">${isU?'👤':'V'}</div><div class="msg-body"><div class="msg-label">${isU?'Sir':'Vani'}</div>${bodyHtml}</div>`;
+    mc.appendChild(row);
+    if(typeof hljs!=='undefined') row.querySelectorAll('pre code').forEach(b=>{try{hljs.highlightElement(b);}catch(e){}});
+  });
+  mc.scrollTop=mc.scrollHeight;
+}
+
+// ---- RENDER SIDEBAR ----
+function renderSidebar() {
+  updateCounts();
+  document.getElementById('model-lbl').textContent=S.settings.model.split('/').pop().replace(':free','');
+  const list=document.getElementById('chat-list');
+  if(!S.chats.length){list.innerHTML='<div style="padding:18px 14px;text-align:center;color:var(--muted);font-size:12px;">No conversations yet</div>';return;}
+  list.innerHTML=S.chats.map(c=>`<div class="chat-item${c.id===S.currentId?' active':''}" ><div class="ci-dot"></div><div class="ci-title" onclick="app.loadChat('${c.id}')">${esc(c.title||'Conversation')}</div><div class="ci-actions"><button class="ci-btn" onclick="app.renameChat(event,'${c.id}')">✏️</button><button class="ci-btn del" onclick="app.deleteChat(event,'${c.id}')">🗑️</button></div></div>`).join('');
+}
+
+// ---- MEMORY ----
+function addMem(text,type){
+  if(!S.memories) S.memories=[];
+  const d=new Date().toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short',year:'numeric'});
+  S.memories.push({text,type:type||'info',date:d,ts:Date.now()});
+  save(); updateCounts();
+}
+function renderMemList(){
+  const c=document.getElementById('mem-list');
+  if(!S.memories||!S.memories.length){c.innerHTML='<div class="empty-state"><div class="empty-icon">🧠</div>No memories yet</div>';return;}
+  c.innerHTML=[...S.memories].reverse().map((m,i)=>{
+    const ri=S.memories.length-1-i;
+    const tc=m.type==='mood'?'tag-mood':m.type==='goal'?'tag-goal':m.type==='event'?'tag-event':'tag-info';
+    return`<div class="mem-item"><div style="font-size:15px;">${m.type==='mood'?'💭':m.type==='goal'?'🎯':m.type==='event'?'📅':'💡'}</div><div style="flex:1;"><div class="mem-text">${esc(m.text)}</div><div class="mem-meta"><span class="mem-tag ${tc}">${m.type}</span>${m.date||''}</div></div><button class="mem-del" onclick="app.deleteMem(${ri})">✕</button></div>`;
+  }).join('');
+}
+function updateCounts(){
+  const mc=document.getElementById('mem-count');
+  const gc=document.getElementById('goal-count');
+  if(mc) mc.textContent=(S.memories||[]).length;
+  if(gc) gc.textContent=(S.goals||[]).filter(g=>!g.done).length;
+}
+
+// ---- GOALS ----
+function renderGoalsList(){
+  const c=document.getElementById('goals-list');
+  const stats=document.getElementById('goals-stats');
+  updateCounts();
+  if(!S.goals||!S.goals.length){c.innerHTML='<div class="empty-state"><div class="empty-icon">🎯</div>No goals yet</div>';if(stats)stats.textContent='';return;}
+  let filtered=S.goals;
+  if(S.goalFilter==='pending') filtered=S.goals.filter(g=>!g.done);
+  else if(S.goalFilter==='done') filtered=S.goals.filter(g=>g.done);
+  if(!filtered.length){c.innerHTML='<div class="empty-state"><div class="empty-icon">✨</div>No '+S.goalFilter+' goals</div>';if(stats)stats.textContent='';return;}
+  c.innerHTML=[...filtered].reverse().map(g=>`<div class="goal-item${g.done?' done':''}"><div class="goal-cb${g.done?' checked':''}" onclick="app.toggleGoal('${g.id}')">${g.done?'✓':''}</div><div style="flex:1;"><div class="goal-text">${esc(g.text)}</div><div class="goal-date">${g.date}</div></div><button class="goal-del" onclick="app.deleteGoal('${g.id}')">✕</button></div>`).join('');
+  const total=S.goals.length,done=S.goals.filter(g=>g.done).length;
+  if(stats) stats.textContent=`${total} total • ${done} done • ${total-done} pending`;
+}
+
+// ---- APP OBJECT ----
+const app = {
+  init(){
+    try{
+      const saved=JSON.parse(localStorage.getItem('vani_final')||'{}');
+      S={...S,...saved};
+      S.settings.prompt=DEFAULT_PROMPT;
+      if(!S.memories) S.memories=[];
+      if(!S.goals) S.goals=[];
+    }catch(e){localStorage.removeItem('vani_final');}
+
+    if(typeof marked!=='undefined') marked.use({breaks:true,gfm:true});
+    initSR();
+    renderSidebar();
+    renderChat();
+
+    let att=0;
+    const show=()=>{
+      att++;
+      if((typeof marked!=='undefined')||att>=10){
+        const l=document.getElementById('loading');
+        const a=document.getElementById('app');
+        l.style.opacity='0'; l.style.transition='opacity 0.4s';
+        setTimeout(()=>{l.style.display='none';a.style.display='flex';requestAnimationFrame(()=>{a.style.opacity='1';});},400);
+      } else setTimeout(show,200);
+    };
+    show();
+
+    if(!S.settings.apiKey) setTimeout(()=>this.openSettings(),800);
+  },
+
+  newChat(){
+    const c={id:Date.now().toString(),title:'New Conversation',messages:[],ts:Date.now()};
+    S.chats.unshift(c); S.currentId=c.id;
+    save(); renderSidebar(); renderChat(); this.closeSidebar();
+    setTimeout(()=>document.getElementById('txt-input').focus(),100);
+  },
+  loadChat(id){S.currentId=id;renderChat();this.closeSidebar();},
+  deleteChat(e,id){
+    e.stopPropagation();
+    if(!confirm('Delete?')) return;
+    S.chats=S.chats.filter(c=>c.id!==id);
+    if(S.currentId===id) S.currentId=S.chats.length?S.chats[0].id:null;
+    save();renderSidebar();renderChat();
+  },
+  renameChat(e,id){
+    e.stopPropagation();
+    const c=S.chats.find(c=>c.id===id);if(!c)return;
+    const n=prompt('Rename:',c.title);
+    if(n&&n.trim()){c.title=n.trim();save();renderSidebar();}
+  },
+  chip(txt){document.getElementById('txt-input').value=txt;app.send();},
+  send(){sendMsg();},
+
+  openSidebar(){document.getElementById('sidebar').classList.add('open');document.getElementById('sb-overlay').classList.add('show');},
+  closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('show');},
+
+  openSettings(){
+    document.getElementById('s-key').value=S.settings.apiKey;
+    document.getElementById('s-model').value=S.settings.model;
+    document.getElementById('s-prompt').value=S.settings.prompt;
+    document.getElementById('s-retry').value=String(S.settings.retries||2);
+    document.getElementById('settings-modal').classList.add('open');
+  },
+  closeSettings(){document.getElementById('settings-modal').classList.remove('open');},
+  saveSettings(){
+    S.settings.apiKey=document.getElementById('s-key').value.trim();
+    S.settings.model=document.getElementById('s-model').value||'arcee-ai/trinity-large-preview:free';
+    S.settings.prompt=document.getElementById('s-prompt').value.trim()||DEFAULT_PROMPT;
+    S.settings.retries=parseInt(document.getElementById('s-retry').value)||2;
+    save();this.closeSettings();renderChat();renderSidebar();
+    showToast('✅ Settings saved!');
+  },
+
+  openMemory(){renderMemList();document.getElementById('memory-modal').classList.add('open');this.closeSidebar();},
+  closeMemory(){document.getElementById('memory-modal').classList.remove('open');},
+  deleteMem(i){S.memories.splice(i,1);save();renderMemList();updateCounts();},
+  clearAllMem(){if(!confirm('Saari memories delete karein? 🥺'))return;S.memories=[];save();renderMemList();updateCounts();},
+  addMemManual(){
+    const txt=document.getElementById('mem-txt').value.trim();
+    const type=document.getElementById('mem-type').value;
+    if(!txt)return;
+    addMem(txt,type);document.getElementById('mem-txt').value='';renderMemList();
+  },
+
+  openGoals(){renderGoalsList();document.getElementById('goals-modal').classList.add('open');this.closeSidebar();},
+  closeGoals(){document.getElementById('goals-modal').classList.remove('open');},
+  addGoal(){
+    const inp=document.getElementById('goal-inp');
+    const txt=inp.value.trim();if(!txt)return;
+    if(!S.goals)S.goals=[];
+    const d=new Date().toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short'});
+    S.goals.push({id:Date.now().toString(),text:txt,done:false,date:d,ts:Date.now()});
+    inp.value='';save();renderGoalsList();updateCounts();
+  },
+  toggleGoal(id){const g=S.goals.find(g=>g.id===id);if(g){g.done=!g.done;save();renderGoalsList();}},
+  deleteGoal(id){S.goals=S.goals.filter(g=>g.id!==id);save();renderGoalsList();updateCounts();},
+  filterGoals(f){
+    S.goalFilter=f;
+    document.querySelectorAll('.goal-tab').forEach(t=>t.classList.toggle('active',t.dataset.f===f));
+    renderGoalsList();
+  },
+
+  toggleMic(){
+    if(!SR){showToast('❌ Browser voice support nahi hai');return;}
+    if(isRec){SR.stop();}else{SR.start();}
+  },
+  handleImg(e){
+    const file=e.target.files[0];if(!file)return;
+    if(file.size>5*1024*1024){showToast('Image too large (max 5MB)');return;}
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      S.currentImg={data:ev.target.result.split(',')[1],type:file.type};
+      document.getElementById('img-preview-thumb').src=ev.target.result;
+      document.getElementById('img-preview-area').style.display='block';
+      showToast('📷 Image ready!');
+    };
+    reader.readAsDataURL(file);
+    e.target.value='';
+  },
+  removeImg(){
+    S.currentImg=null;
+    document.getElementById('img-preview-area').style.display='none';
+    document.getElementById('img-preview-thumb').src='';
+  }
+};
+
+document.addEventListener('DOMContentLoaded',()=>app.init());
+</script>
+
+<!-- Highlight.js -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<!-- Marked -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</body>
+</html>
