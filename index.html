@@ -856,9 +856,9 @@ const TEXT_MODELS = [
   'mistralai/mistral-7b-instruct:free',
 ];
 const VISION_MODELS = [
-  'google/gemma-3-27b-it:free',
   'meta-llama/llama-3.2-11b-vision-instruct:free',
   'qwen/qwen2.5-vl-3b-instruct:free',
+  'google/gemma-3-27b-it:free',
 ];
 
 // ---- STATE ----
@@ -1117,7 +1117,14 @@ async function sendMsg() {
   const goalCtx=S.goals.filter(g=>!g.done).length?'\n\n[PENDING GOALS]\n'+S.goals.filter(g=>!g.done).slice(0,8).map((g,i)=>`${i+1}. ${g.text}`).join('\n'):'';
   const finalSys=sysPrompt+`\n\n[IST: ${ist.time} | ${ist.date} | ${ist.tod}]\n${greetRule}`+memCtx+goalCtx+'\n\n[MEMORY RULE] Agar Sir ne kuch important share kiya (mood/goal/event/info), response ke END mein NEW LINE par likho: VANI_MEM:type:text\nMax 2. User ko KABHI mat dikhao ye line.';
 
-  const apiMsgs=[{role:'system',content:finalSys},...chat.messages.filter(m=>m.id!==aiId&&!(m.streaming&&!m.content)).map(m=>({role:m.role,content:m.content}))];
+  // API messages — image content array properly pass karo
+  const apiMsgs=[{role:'system',content:finalSys},...chat.messages
+    .filter(m=>m.id!==aiId&&!(m.streaming&&!m.content))
+    .map(m=>{
+      // Image wale messages ka content array as-is pass karo
+      if(Array.isArray(m.content)) return {role:m.role, content:m.content};
+      return {role:m.role, content:m.content||''};
+    })];
 
   try {
     const {res,model}=await callAPI(apiMsgs,!!imgData);
@@ -1216,8 +1223,9 @@ function renderChat() {
       let content='';
       if(isU&&msg.imgSrc) content+=`<img class="msg-img" src="${msg.imgSrc}">`;
       if(isU){
-        const txtContent=typeof msg.content==='string'?msg.content:(Array.isArray(msg.content)?msg.content.find(c=>c.type==='text')?.text||'':'');
-        content+=`<div>${esc(txtContent)}</div>`;
+        const txtContent=typeof msg.content==='string'?msg.content:(Array.isArray(msg.content)?msg.content.find(x=>x.type==='text')?.text||'':'');
+        if(msg.imgSrc) content+=`<img class="msg-img" src="${msg.imgSrc}" style="max-width:200px;border-radius:10px;margin-bottom:6px;display:block;">`;
+        if(txtContent) content+=`<div>${esc(txtContent)}</div>`;
         bodyHtml=`<div class="msg-bubble bubble-user">${content}</div>`;
       } else {
         const proseClass='prose'+(msg.streaming?' stream-cursor':'');
