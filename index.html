@@ -936,9 +936,8 @@ function getBestVoice(voices) {
 let ttsChunks = [], ttsChunkIdx = 0, ttsBtn = null, ttsSpeed = 0.9;
 
 function speakText(btn, text, speed) {
-  if(!('speechSynthesis' in window)) { showToast('❌ TTS not supported'); return; }
+  if(!('speechSynthesis' in window)) { showToast('❌ TTS supported nahi hai'); return; }
 
-  // If already playing — stop
   if(btn.classList.contains('playing')) {
     speechSynthesis.cancel();
     btn.classList.remove('playing'); btn.textContent='▶';
@@ -948,58 +947,59 @@ function speakText(btn, text, speed) {
 
   speechSynthesis.cancel();
   const clean = cleanForTTS(text);
-  if(!clean) return;
+  if(!clean) { showToast('Kuch bolne ke liye nahi mila'); return; }
 
   loadVoices();
   const voices = ttsVoices.length ? ttsVoices : speechSynthesis.getVoices();
   const voice = getBestVoice(voices);
 
-  ttsChunks = splitIntoChunks(clean, 180);
+  ttsChunks = splitIntoChunks(clean, 150);
   ttsChunkIdx = 0;
   ttsBtn = btn;
-  ttsSpeed = parseFloat(speed) || 0.9;
+  ttsSpeed = parseFloat(speed) || 0.85;
 
   btn.classList.add('playing'); btn.textContent='⏸';
 
   function speakNext() {
     if(ttsChunkIdx >= ttsChunks.length) {
-      // All done
       if(ttsBtn) { ttsBtn.classList.remove('playing'); ttsBtn.textContent='▶'; }
       ttsBtn = null; ttsChunks = []; ttsChunkIdx = 0;
       return;
     }
+    if(!ttsBtn) return;
 
-    const utt = new SpeechSynthesisUtterance(ttsChunks[ttsChunkIdx]);
+    const chunk = ttsChunks[ttsChunkIdx];
+    if(!chunk || !chunk.trim()) { ttsChunkIdx++; speakNext(); return; }
+
+    const utt = new SpeechSynthesisUtterance(chunk);
     utt.rate = ttsSpeed; utt.pitch = 1.05; utt.volume = 1.0;
     if(voice) { utt.voice = voice; utt.lang = voice.lang; } else { utt.lang = 'hi-IN'; }
 
-    utt.onend = () => {
-      ttsChunkIdx++;
-      // Small gap between chunks
-      setTimeout(speakNext, 80);
-    };
+    // Android Chrome keepalive
+    let ka = setInterval(() => {
+      if(speechSynthesis.speaking && !speechSynthesis.paused) {
+        speechSynthesis.pause(); speechSynthesis.resume();
+      }
+    }, 8000);
 
-    utt.onerror = (e) => {
-      if(e.error === 'interrupted' || e.error === 'canceled') return;
-      // Try next chunk on error
+    utt.onend = function() {
+      clearInterval(ka);
       ttsChunkIdx++;
       setTimeout(speakNext, 100);
     };
 
-    // Android Chrome keepalive trick
-    const ka = setInterval(() => {
-      if(speechSynthesis.speaking && !speechSynthesis.paused) {
-        speechSynthesis.pause(); speechSynthesis.resume();
-      } else if(!speechSynthesis.speaking) clearInterval(ka);
-    }, 8000);
-
-    utt.onend = () => { clearInterval(ka); ttsChunkIdx++; setTimeout(speakNext, 80); };
-    utt.onerror = (e) => { clearInterval(ka); if(e.error==='interrupted'||e.error==='canceled') return; ttsChunkIdx++; setTimeout(speakNext, 100); };
+    utt.onerror = function(e) {
+      clearInterval(ka);
+      if(e.error === 'interrupted' || e.error === 'canceled') return;
+      ttsChunkIdx++;
+      setTimeout(speakNext, 150);
+    };
 
     speechSynthesis.speak(utt);
   }
 
-  setTimeout(speakNext, 150);
+  // Android Chrome mein 300ms delay zaroori hai
+  setTimeout(speakNext, 300);
 }
 
 // ---- SPEECH RECOGNITION ----
