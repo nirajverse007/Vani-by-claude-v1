@@ -878,7 +878,7 @@ function loadVoices() {
 }
 if('speechSynthesis' in window) {
   speechSynthesis.onvoiceschanged = loadVoices;
-  [100,500,1500].forEach(d=>setTimeout(loadVoices,d));
+  [200,800,2000,4000].forEach(d=>setTimeout(loadVoices,d));
 }
 
 function cleanForTTS(text) {
@@ -921,14 +921,14 @@ function splitIntoChunks(text, maxLen = 180) {
 }
 
 function getBestVoice(voices) {
-  // Priority: hi-IN female > hi-IN any > en-IN female > en-IN > any female > first
+  // hi-IN aur hi_IN dono match karo (Android underscore use karta hai)
+  const isHindi = v => v.lang.replace('_','-').toLowerCase().startsWith('hi');
+  const isEnIN  = v => v.lang === 'en-IN' || v.lang === 'en_IN';
   return (
-    voices.find(v => v.lang === 'hi-IN' && /female|woman/i.test(v.name)) ||
-    voices.find(v => v.lang === 'hi-IN') ||
-    voices.find(v => v.lang === 'hi') ||
-    voices.find(v => v.lang === 'en-IN' && /female|woman/i.test(v.name)) ||
-    voices.find(v => v.lang === 'en-IN') ||
-    voices.find(v => /female|zira|samantha|victoria|karen|moira|veena|lekha/i.test(v.name)) ||
+    voices.find(v => isHindi(v) && /female|woman/i.test(v.name)) ||
+    voices.find(v => isHindi(v)) ||
+    voices.find(v => isEnIN(v)) ||
+    voices.find(v => /female|zira|samantha|victoria|karen|veena|lekha/i.test(v.name)) ||
     voices[0] || null
   );
 }
@@ -949,8 +949,10 @@ function speakText(btn, text, speed) {
   const clean = cleanForTTS(text);
   if(!clean) { showToast('Kuch bolne ke liye nahi mila'); return; }
 
-  loadVoices();
-  const voices = ttsVoices.length ? ttsVoices : speechSynthesis.getVoices();
+  // Voices fresh load karo — Android mein zaroori hai
+  const freshVoices = speechSynthesis.getVoices();
+  if(freshVoices.length > 0) ttsVoices = freshVoices;
+  const voices = ttsVoices.length ? ttsVoices : freshVoices;
   const voice = getBestVoice(voices);
 
   ttsChunks = splitIntoChunks(clean, 150);
@@ -1008,7 +1010,7 @@ function initSR() {
   const SRClass = window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SRClass) return;
   SR = new SRClass();
-  SR.lang='hi-IN'; SR.interimResults=true; SR.continuous=false;
+  SR.lang='hi_IN'; SR.interimResults=true; SR.continuous=false;
   SR.onstart=()=>{ isRec=true; document.getElementById('mic-btn').classList.add('recording'); document.getElementById('rec-status').style.display='inline'; showToast('🎙️ Bol do...'); };
   SR.onresult=(e)=>{ let fin=''; for(let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) fin+=e.results[i][0].transcript; if(fin){document.getElementById('txt-input').value=fin;} };
   SR.onend=()=>{ isRec=false; document.getElementById('mic-btn').classList.remove('recording'); document.getElementById('rec-status').style.display='none'; };
