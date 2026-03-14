@@ -656,14 +656,14 @@ textarea.form-inp { resize:none; min-height:90px; line-height:1.6; }
     <div id="messages"></div>
 
     <div id="input-area">
-      <div id="img-preview-area">
+      <div id="img-preview-area" style="display:none;">
         <img id="img-preview-thumb" src="" alt="">
         <button id="img-remove" onclick="app.removeImg()">✕</button>
       </div>
       <div class="input-box">
         <input type="file" id="img-file" accept="image/*" style="display:none" onchange="app.handleImg(event)">
         <button class="input-tool" id="mic-btn" onclick="app.toggleMic()" title="Voice">🎙️</button>
-        <button class="input-tool" onclick="document.getElementById('img-file').click()" title="Image">📷</button>
+        <!-- Image button removed -->
         <span id="rec-status">🔴 Recording...</span>
         <textarea id="txt-input" placeholder="Vani se kuch bhi pocho..." rows="1"
           oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,130)+'px'"
