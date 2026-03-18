@@ -1041,7 +1041,7 @@ function showToast(msg,dur=2500) {
 
 // ---- HELPERS ----
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function save(){try{localStorage.setItem('vani_v2',JSON.stringify(S));}catch(e){}}
+function save(){try{localStorage.setItem('vani_final',JSON.stringify(S));}catch(e){}}
 function getIST(){
   const n=new Date();
   const time=n.toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:true});
@@ -1360,7 +1360,7 @@ const app = {
   init(){
     try{
       // Try loading new key first, fallback to old key
-      const saved=JSON.parse(localStorage.getItem('vani_v2')||localStorage.getItem('vani_final')||'{}');
+      const saved=JSON.parse(localStorage.getItem('vani_final')||'{}');
       S={...S,...saved};
       S.settings.prompt=DEFAULT_PROMPT;
       if(!S.memories) S.memories=[];
