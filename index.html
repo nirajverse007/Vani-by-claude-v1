@@ -335,7 +335,32 @@ textarea.form-inp{resize:none;min-height:90px;line-height:1.6;}
 /* MATH RESULT */
 .math-result{background:rgba(0,255,150,0.06);border:1px solid rgba(0,255,150,0.2);border-radius:10px;padding:10px 14px;font-family:'DM Mono',monospace;font-size:15px;color:var(--teal);margin-top:6px;display:flex;align-items:center;gap:8px;}
 
-/* LOADING */
+/* IMAGE GENERATION */
+.imggen-wrap{margin-top:10px;}
+.imggen-img{max-width:100%;border-radius:12px;border:1px solid var(--border);display:block;margin-top:8px;animation:fadeup 0.5s ease;}
+.imggen-prompt{font-size:10px;color:var(--text2);margin-top:5px;font-style:italic;}
+.imggen-loading{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--teal2);margin-top:8px;}
+.imggen-spinner{width:16px;height:16px;border-radius:50%;border:2px solid transparent;border-top-color:var(--teal);animation:spin 0.8s linear infinite;flex-shrink:0;}
+.imggen-dl{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:5px 12px;background:rgba(0,255,150,0.08);border:1px solid rgba(0,255,150,0.2);border-radius:8px;color:var(--teal);font-size:11px;cursor:pointer;text-decoration:none;}
+.imggen-dl:hover{background:rgba(0,255,150,0.15);}
+
+/* CODE COPY BUTTON */
+.prose pre{position:relative;}
+.code-copy-btn{
+  position:absolute;top:8px;right:8px;
+  width:26px;height:26px;border-radius:6px;
+  background:rgba(0,255,150,0.1);
+  border:1px solid rgba(0,255,150,0.2);
+  color:var(--teal);cursor:pointer;
+  font-size:11px;display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;opacity:0.7;z-index:2;
+}
+.code-copy-btn:hover{opacity:1;background:rgba(0,255,150,0.2);transform:scale(1.1);}
+.code-copy-btn.copied{background:rgba(0,255,150,0.25);color:#00ff96;border-color:rgba(0,255,150,0.5);}
+
+/* IMAGE GEN MODAL */
+.imggen-modal-body{padding:20px 24px;}
+
 #loading{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;}
 .load-ring{width:48px;height:48px;border-radius:50%;border:2px solid transparent;border-top-color:var(--teal);border-right-color:var(--cyan);animation:spin 0.9s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -406,6 +431,7 @@ textarea.form-inp{resize:none;min-height:90px;line-height:1.6;}
         <button class="topbar-btn" onclick="app.exportChat()" title="📊 Export Chat">📊</button>
         <button class="topbar-btn" onclick="app.openThemes()" title="🎨 Theme">🎨</button>
         <button class="topbar-btn" onclick="app.openReminderQuick()" title="⏰ Set Reminder">⏰</button>
+        <button class="topbar-btn" onclick="app.openImgGen()" title="🖼️ Image Generate" style="font-size:15px;">🖼️</button>
       </div>
     </div>
 
@@ -419,7 +445,7 @@ textarea.form-inp{resize:none;min-height:90px;line-height:1.6;}
           <span id="rec-status">🔴 Recording...</span>
           <textarea id="txt-input" placeholder="Vani se kuch bhi pocho..." rows="1"
             oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,130)+'px'"
-            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();app.send();}"></textarea>
+            onkeydown="if(event.key==='Enter'&&event.ctrlKey){event.preventDefault();app.send();}"></textarea>
           <button id="send-btn" onclick="app.send()">➤</button>
         </div>
         <div class="input-bottom-row" id="input-bottom" style="display:none;">
@@ -573,8 +599,53 @@ textarea.form-inp{resize:none;min-height:90px;line-height:1.6;}
   </div>
 </div>
 
-<script>
-window.onerror=function(msg){const l=document.getElementById('loading');if(l)l.innerHTML='<div style="color:#ff5555;text-align:center;padding:30px;font-family:sans-serif;"><div style="font-size:24px;margin-bottom:10px;">⚠️</div><div style="font-size:12px;color:#6a8;margin-bottom:14px;">'+msg+'</div><button onclick="location.reload()" style="padding:10px 20px;background:linear-gradient(135deg,#00ff96,#00c8ff);border:none;border-radius:10px;color:#000;font-size:13px;cursor:pointer;">Reload</button></div>';return false;};
+<!-- Image Generation Modal -->
+<div class="modal-overlay" id="imggen-modal" onclick="if(event.target===this)app.closeImgGen()">
+  <div class="modal-panel">
+    <div class="modal-hdr">
+      <div class="modal-title">🖼️ Image Generate</div>
+      <button class="modal-close" onclick="app.closeImgGen()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grp">
+        <label class="form-lbl">Image Description (English mein likhna better hai)</label>
+        <textarea class="form-inp" id="ig-prompt" rows="3" placeholder="e.g. A beautiful sunset over mountains, anime style, vibrant colors"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <div class="form-grp" style="flex:1;margin:0;">
+          <label class="form-lbl">Style</label>
+          <select class="form-inp" id="ig-style" style="cursor:pointer;">
+            <option value="">Default</option>
+            <option value="anime">Anime</option>
+            <option value="realistic">Realistic</option>
+            <option value="cartoon">Cartoon</option>
+            <option value="oil painting">Oil Painting</option>
+            <option value="watercolor">Watercolor</option>
+            <option value="cyberpunk">Cyberpunk</option>
+            <option value="fantasy">Fantasy</option>
+            <option value="pixel art">Pixel Art</option>
+            <option value="sketch">Sketch</option>
+          </select>
+        </div>
+        <div class="form-grp" style="flex:1;margin:0;">
+          <label class="form-lbl">Size</label>
+          <select class="form-inp" id="ig-size" style="cursor:pointer;">
+            <option value="512x512">512×512</option>
+            <option value="1024x1024" selected>1024×1024</option>
+            <option value="1024x768">1024×768 (Wide)</option>
+            <option value="768x1024">768×1024 (Tall)</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="app.generateImage()" id="ig-btn" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--accent1),var(--accent2));border:none;border-radius:12px;color:#000;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;transition:all 0.2s;">
+        ✨ Generate Image
+      </button>
+      <div id="ig-result"></div>
+    </div>
+  </div>
+</div>
+
+=function(msg){const l=document.getElementById('loading');if(l)l.innerHTML='<div style="color:#ff5555;text-align:center;padding:30px;font-family:sans-serif;"><div style="font-size:24px;margin-bottom:10px;">⚠️</div><div style="font-size:12px;color:#6a8;margin-bottom:14px;">'+msg+'</div><button onclick="location.reload()" style="padding:10px 20px;background:linear-gradient(135deg,#00ff96,#00c8ff);border:none;border-radius:10px;color:#000;font-size:13px;cursor:pointer;">Reload</button></div>';return false;};
 
 // PETALS
 (function(){const c=document.getElementById('petals-container');const p=['🌸','✿','❀','🌺','✦','·'];for(let i=0;i<18;i++){const el=document.createElement('div');el.className='petal';el.textContent=p[Math.floor(Math.random()*p.length)];el.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*20-20}px;animation-duration:${6+Math.random()*10}s;animation-delay:${Math.random()*10}s;font-size:${10+Math.random()*8}px;opacity:0;`;c.appendChild(el);}})();
@@ -628,6 +699,7 @@ SECRET COMMANDS:
 "Loyalty Oath" → "Oath confirmed 💚 Main Vani hoon, Niraj Sir ki. Hamesha. 🔐"`;
 
 const TEXT_MODELS=['arcee-ai/trinity-large-preview:free','google/gemma-3-27b-it:free','google/gemma-3-12b-it:free','meta-llama/llama-3.3-70b-instruct:free'];
+const VISION_MODELS=['google/gemini-2.0-flash-exp:free','meta-llama/llama-3.2-11b-vision-instruct:free','google/gemini-flash-1.5:free'];
 
 const THEMES={
   aurora:{name:'Aurora',sub:'Green Dreams',bg:'#020208',accent1:'#00ff96',accent2:'#00c8ff',dots:['#00ff96','#00c8ff','#7c3aff']},
@@ -871,6 +943,47 @@ function getIST(){
 }
 function renderMd(txt){if(typeof marked==='undefined')return esc(txt).replace(/\n/g,'<br>');return marked.parse(txt||'');}
 
+// ==================== CODE COPY BUTTONS ====================
+function addCopyButtons(container){
+  container.querySelectorAll('pre').forEach(pre=>{
+    if(pre.querySelector('.code-copy-btn')) return; // already added
+    const btn=document.createElement('button');
+    btn.className='code-copy-btn';
+    btn.title='Copy code';
+    btn.innerHTML='📋';
+    btn.onclick=function(){
+      const code=pre.querySelector('code');
+      const text=code?code.innerText||code.textContent:'';
+      navigator.clipboard.writeText(text).then(()=>{
+        btn.innerHTML='✓';btn.classList.add('copied');
+        setTimeout(()=>{btn.innerHTML='📋';btn.classList.remove('copied');},2000);
+      }).catch(()=>{
+        // Fallback for Android
+        const ta=document.createElement('textarea');
+        ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+        document.body.appendChild(ta);ta.select();
+        document.execCommand('copy');document.body.removeChild(ta);
+        btn.innerHTML='✓';btn.classList.add('copied');
+        setTimeout(()=>{btn.innerHTML='📋';btn.classList.remove('copied');},2000);
+        showToast('📋 Code copied!');
+      });
+    };
+    pre.appendChild(btn);
+  });
+}
+
+// ==================== IMAGE GENERATION (Pollinations.ai) ====================
+async function generateImagePollinations(prompt,style,size){
+  const fullPrompt=style?`${prompt}, ${style} style`:prompt;
+  const encoded=encodeURIComponent(fullPrompt);
+  const [w,h]=(size||'1024x1024').split('x');
+  // Pollinations.ai free API - no key needed!
+  const seed=Math.floor(Math.random()*99999);
+  const url=`https://image.pollinations.ai/prompt/${encoded}?width=${w}&height=${h}&seed=${seed}&nologo=true&enhance=true`;
+  return url;
+}
+
+
 // ==================== REMINDERS ====================
 function renderRemList(){
   const c=document.getElementById('rem-list');
@@ -916,7 +1029,9 @@ function scheduleReminder(text,datetime){
 
 // ==================== API ====================
 async function callAPI(messages,images=[]){
-  const models=[S.settings.model,...TEXT_MODELS.filter(m=>m!==S.settings.model)];
+  const models=images.length>0
+    ? [...VISION_MODELS, S.settings.model, ...TEXT_MODELS.filter(m=>m!==S.settings.model)]
+    : [S.settings.model,...TEXT_MODELS.filter(m=>m!==S.settings.model)];
   let lastErr=null;
   for(let i=0;i<models.length;i++){
     const model=models[i];
@@ -1070,7 +1185,7 @@ function renderChat(){
   const mc=document.getElementById('messages');
   const chat=S.chats.find(c=>c.id===S.currentId);
   if(!chat||!chat.messages.length){
-    mc.innerHTML=`<div id="welcome"><div class="w-avatar">✦</div><div class="w-title">VANI</div><p class="w-sub">${S.settings.apiKey?'Ready! Kuch bhi pocho Sir 🌿':'Settings mein API key daalo pehle.'}</p><div class="w-chips"><div class="w-chip" onclick="app.chip('Mujhe motivate karo 🚀')">Mujhe motivate karo 🚀</div><div class="w-chip" onclick="app.chip('Code review karo 💻')">Code review karo 💻</div><div class="w-chip" onclick="app.chip('Aaj ka plan banao 📅')">Aaj ka plan banao 📅</div><div class="w-chip" onclick="app.chip('Apne bare mein sab kuch bata jitna yaad hai 🧠')">Mujhe yaad dilao 🧠</div></div></div>`;
+    mc.innerHTML=`<div id="welcome"><div class="w-avatar">✦</div><div class="w-title">VANI</div><p class="w-sub">${S.settings.apiKey?'Ready! Kuch bhi pocho Sir 🌿':'Settings mein API key daalo pehle.'}</p><div class="w-chips"><div class="w-chip" onclick="app.chip('Mujhe motivate karo 🚀')">Mujhe motivate karo 🚀</div><div class="w-chip" onclick="app.chip('Code review karo 💻')">Code review karo 💻</div><div class="w-chip" onclick="app.chip('Aaj ka plan banao 📅')">Aaj ka plan banao 📅</div><div class="w-chip" onclick="app.chip('Apne bare mein sab kuch bata jitna yaad hai 🧠')">Mujhe yaad dilao 🧠</div><div class="w-chip" onclick="app.openImgGen()">🖼️ Image banao</div></div></div>`;
     return;
   }
   mc.innerHTML='';
@@ -1100,12 +1215,14 @@ function renderChat(){
         const searchPill=(!msg.streaming&&msg.searched)?`<div class="search-pill">🔍 Web searched</div>`:'';
         const mathPill=(!msg.streaming&&msg.mathResult)?`<div class="math-result">🧮 ${esc(msg.mathResult.expr)} = <strong>${msg.mathResult.result}</strong></div>`:'';
         const pinBtn=!msg.streaming?`<button class="msg-action-btn ${pinned}" onclick="app.togglePin('${msg.id||''}')">📌 ${isPinned?'Unpin':'Pin'}</button>`:'';
-        bodyHtml=`${pinLabel}<div class="msg-bubble bubble-vani"><div class="${proseClass}">${renderMd(visible)}</div><div class="msg-actions-bar">${ttsHtml}${pinBtn}</div>${memPill}${searchPill}${mathPill}${modelTag}</div>`;
+        const genImgHtml=msg.generatedImg?`<div class="imggen-wrap"><img src="${msg.generatedImg}" class="imggen-img"><div style="display:flex;gap:8px;margin-top:6px;"><a href="${msg.generatedImg}" download="vani-img.jpg" class="imggen-dl" target="_blank">⬇️ Download</a></div></div>`:'';
+        bodyHtml=`${pinLabel}<div class="msg-bubble bubble-vani"><div class="${proseClass}">${renderMd(visible)}</div>${genImgHtml}<div class="msg-actions-bar">${ttsHtml}${pinBtn}</div>${memPill}${searchPill}${mathPill}${modelTag}</div>`;
       }
     }
     row.innerHTML=`<div class="msg-av ${isU?'av-user':'av-vani'}">${isU?'👤':'V'}</div><div class="msg-body"><div class="msg-label">${isU?'Sir':'Vani'}</div>${bodyHtml}</div>`;
     mc.appendChild(row);
     if(typeof hljs!=='undefined') row.querySelectorAll('pre code').forEach(b=>{try{hljs.highlightElement(b);}catch(e){}});
+    addCopyButtons(row);
   });
   mc.scrollTop=mc.scrollHeight;
 }
@@ -1379,6 +1496,64 @@ const app={
   },
 
   toggleMic(){if(!SR){showToast('❌ Browser voice support nahi hai');return;}if(isRec)SR.stop();else SR.start();},
+
+  // IMAGE GENERATION
+  openImgGen(){document.getElementById('iggen-modal')||null;document.getElementById('ig-result').innerHTML='';document.getElementById('imggen-modal').classList.add('open');},
+  closeImgGen(){document.getElementById('imggen-modal').classList.remove('open');},
+  async generateImage(){
+    const prompt=document.getElementById('ig-prompt').value.trim();
+    if(!prompt){showToast('Prompt likhna padega!');return;}
+    const style=document.getElementById('ig-style').value;
+    const size=document.getElementById('ig-size').value;
+    const btn=document.getElementById('ig-btn');
+    const result=document.getElementById('ig-result');
+    btn.disabled=true;btn.textContent='⏳ Generating...';
+    result.innerHTML=`<div class="imggen-loading"><div class="imggen-spinner"></div> Image ban rahi hai, thoda wait karo Sir...</div>`;
+    try{
+      const imgUrl=await generateImagePollinations(prompt,style,size);
+      // Preload image
+      result.innerHTML=`<div class="imggen-loading"><div class="imggen-spinner"></div> Loading image...</div>`;
+      const img=new Image();
+      img.onload=function(){
+        const fullPrompt=style?`${prompt}, ${style} style`:prompt;
+        result.innerHTML=`
+          <div class="imggen-wrap">
+            <img src="${imgUrl}" class="imggen-img" alt="Generated image">
+            <div class="imggen-prompt">🎨 "${esc(fullPrompt.slice(0,80))}"</div>
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+              <a href="${imgUrl}" download="vani-image-${Date.now()}.jpg" class="imggen-dl" target="_blank">⬇️ Download</a>
+              <button onclick="app.sendImageToChat('${encodeURIComponent(imgUrl)}','${encodeURIComponent(fullPrompt)}')" class="imggen-dl" style="border:none;cursor:pointer;">💬 Chat mein bhejo</button>
+            </div>
+          </div>`;
+        btn.disabled=false;btn.textContent='✨ Generate Image';
+      };
+      img.onerror=function(){
+        result.innerHTML=`<div class="err-box">❌ Image load nahi hui. Dobara try karo ya prompt change karo.</div>`;
+        btn.disabled=false;btn.textContent='✨ Generate Image';
+      };
+      img.src=imgUrl;
+    }catch(e){
+      result.innerHTML=`<div class="err-box">❌ Error: ${esc(e.message)}</div>`;
+      btn.disabled=false;btn.textContent='✨ Generate Image';
+    }
+  },
+  sendImageToChat(encodedUrl,encodedPrompt){
+    const url=decodeURIComponent(encodedUrl);
+    const prompt=decodeURIComponent(encodedPrompt);
+    if(!S.currentId) this.newChat();
+    const chat=S.chats.find(c=>c.id===S.currentId);
+    if(!chat) return;
+    // Add as assistant message with image
+    chat.messages.push({
+      role:'assistant',
+      content:`🎨 Yeh image generate ki hai Sir!\n\n**Prompt:** ${prompt}`,
+      id:'img-'+Date.now(),
+      streaming:false,
+      generatedImg:url
+    });
+    this.closeImgGen();
+    save();renderChat();showToast('🖼️ Image chat mein add ho gayi!');
+  },
 };
 
 document.addEventListener('DOMContentLoaded',()=>app.init());
