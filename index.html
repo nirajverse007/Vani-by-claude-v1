@@ -7,6 +7,9 @@
 <meta name="theme-color" content="#020208">
 <meta name="mobile-web-app-capable" content="yes">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 /* ==================== THEMES ==================== */
 :root {
@@ -1365,15 +1368,17 @@ const app={
     const today=new Date().toISOString().split('T')[0];
     ['rem-date','qrem-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=today;});
 
+    function doShow(){
+      const l=document.getElementById('loading');const a=document.getElementById('app');
+      if(!l||l.style.display==='none') return;
+      if(typeof marked!=='undefined') try{marked.use({breaks:true,gfm:true});}catch(e){}
+      l.style.opacity='0';l.style.transition='opacity 0.4s';
+      setTimeout(()=>{l.style.display='none';a.style.display='flex';requestAnimationFrame(()=>{a.style.opacity='1';});},400);
+    }
+    // Force show after 3 seconds max — CDN slow ho tab bhi app open hoga
+    setTimeout(doShow, 3000);
     let att=0;
-    const show=()=>{
-      att++;
-      if((typeof marked!=='undefined')||att>=10){
-        const l=document.getElementById('loading');const a=document.getElementById('app');
-        l.style.opacity='0';l.style.transition='opacity 0.4s';
-        setTimeout(()=>{l.style.display='none';a.style.display='flex';requestAnimationFrame(()=>{a.style.opacity='1';});},400);
-      }else setTimeout(show,200);
-    };
+    const show=()=>{att++;if(typeof marked!=='undefined'){doShow();}else if(att<20){setTimeout(show,150);}else{doShow();}};
     show();
     if(!S.settings.apiKey) setTimeout(()=>this.openSettings(),800);
   },
