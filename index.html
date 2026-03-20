@@ -343,13 +343,10 @@ body::before {
 }
 @keyframes blink { 50%{opacity:0;} }
 
-/* MEMORY SAVED INDICATOR */
-.mem-saved-pill {
-  display:inline-flex; align-items:center; gap:5px;
-  background:rgba(0,255,150,0.08); border:1px solid rgba(0,255,150,0.2);
-  border-radius:20px; padding:3px 10px; font-size:10px;
-  color:var(--teal2); margin-top:6px;
-  animation:fadeup 0.4s ease;
+/* RETRY */
+.retry-bar {
+  display:flex; align-items:center; gap:7px;
+  font-size:11px; color:var(--gold); padding:4px 0;
 }
 
 /* ERROR */
@@ -374,6 +371,14 @@ body::before {
   padding:0 14px 18px;
   background:linear-gradient(to top,var(--bg) 55%,transparent);
   z-index:20;
+}
+#img-preview-area { max-width:780px; margin:0 auto 8px; display:none; }
+#img-preview-area img { max-width:180px; max-height:180px; border-radius:10px; border:1px solid var(--border); }
+#img-remove {
+  margin-left:8px; width:24px; height:24px;
+  background:rgba(255,80,80,0.15); border:1px solid rgba(255,80,80,0.3);
+  border-radius:50%; color:var(--danger); cursor:pointer;
+  font-size:12px; vertical-align:middle;
 }
 .input-box {
   max-width:780px; margin:0 auto;
@@ -502,8 +507,6 @@ textarea.form-inp { resize:none; min-height:90px; line-height:1.6; }
 .tag-goal { background:rgba(0,255,150,0.1); color:var(--teal); }
 .tag-info { background:rgba(0,200,255,0.1); color:var(--cyan); }
 .tag-event { background:rgba(255,215,0,0.1); color:var(--gold); }
-.tag-personal { background:rgba(120,0,255,0.15); color:#b070ff; }
-.tag-preference { background:rgba(255,160,0,0.12); color:#ffb040; }
 .mem-del { background:none; border:none; color:var(--text2); cursor:pointer; padding:3px; border-radius:5px; font-size:10px; transition:all 0.15s; flex-shrink:0; }
 .mem-del:hover { color:var(--danger); background:rgba(255,80,80,0.1); }
 .empty-state { text-align:center; padding:36px 20px; color:var(--text2); font-size:12px; }
@@ -595,16 +598,22 @@ textarea.form-inp { resize:none; min-height:90px; line-height:1.6; }
 </head>
 <body>
 
+<!-- Petals -->
 <div id="petals-container"></div>
+
+<!-- Toast -->
 <div id="toast"></div>
 
+<!-- Loading -->
 <div id="loading">
   <div class="load-ring"></div>
   <div class="load-txt">Vani</div>
 </div>
 
+<!-- App -->
 <div id="app" style="display:none;opacity:0;transition:opacity 0.5s ease;">
 
+  <!-- Sidebar -->
   <aside id="sidebar">
     <div class="sb-header">
       <div class="sb-logo">✦ VANI</div>
@@ -630,8 +639,10 @@ textarea.form-inp { resize:none; min-height:90px; line-height:1.6; }
     </div>
   </aside>
 
+  <!-- Sidebar overlay -->
   <div id="sb-overlay" onclick="app.closeSidebar()"></div>
 
+  <!-- Main -->
   <main id="main">
     <div id="topbar">
       <button id="hamburger" onclick="app.openSidebar()">☰</button>
@@ -645,8 +656,14 @@ textarea.form-inp { resize:none; min-height:90px; line-height:1.6; }
     <div id="messages"></div>
 
     <div id="input-area">
+      <div id="img-preview-area">
+        <img id="img-preview-thumb" src="" alt="">
+        <button id="img-remove" onclick="app.removeImg()">✕</button>
+      </div>
       <div class="input-box">
+        <input type="file" id="img-file" accept="image/*" style="display:none" onchange="app.handleImg(event)">
         <button class="input-tool" id="mic-btn" onclick="app.toggleMic()" title="Voice">🎙️</button>
+        <button class="input-tool" onclick="document.getElementById('img-file').click()" title="Image">📷</button>
         <span id="rec-status">🔴 Recording...</span>
         <textarea id="txt-input" placeholder="Vani se kuch bhi pocho..." rows="1"
           oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,130)+'px'"
@@ -712,9 +729,7 @@ textarea.form-inp { resize:none; min-height:90px; line-height:1.6; }
     <div class="modal-body" id="mem-list"></div>
     <div style="padding:0 24px 14px;">
       <div style="display:flex;gap:7px;align-items:center;">
-        <select id="mem-type" class="form-inp" style="width:110px;padding:8px 10px;flex-shrink:0;">
-          <option value="personal">👤 Personal</option>
-          <option value="preference">❤️ Pref</option>
+        <select id="mem-type" class="form-inp" style="width:100px;padding:8px 10px;flex-shrink:0;">
           <option value="info">ℹ️ Info</option>
           <option value="goal">🎯 Goal</option>
           <option value="mood">💭 Mood</option>
@@ -758,6 +773,11 @@ textarea.form-inp { resize:none; min-height:90px; line-height:1.6; }
 </div>
 
 <script>
+// =============================================
+// VANI AI — Complete Version
+// Aurora Theme + All Features
+// =============================================
+
 window.onerror = function(msg) {
   const l = document.getElementById('loading');
   if(l) l.innerHTML = '<div style="color:#ff5555;text-align:center;padding:30px;font-family:sans-serif;"><div style="font-size:24px;margin-bottom:10px;">⚠️</div><div style="font-size:12px;color:#6a8;margin-bottom:14px;">'+msg+'</div><button onclick="location.reload()" style="padding:10px 20px;background:linear-gradient(135deg,#00ff96,#00c8ff);border:none;border-radius:10px;color:#000;font-size:13px;cursor:pointer;">Reload</button></div>';
@@ -772,7 +792,14 @@ window.onerror = function(msg) {
     const p = document.createElement('div');
     p.className = 'petal';
     p.textContent = petals[Math.floor(Math.random()*petals.length)];
-    p.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*20-20}px;animation-duration:${6+Math.random()*10}s;animation-delay:${Math.random()*10}s;font-size:${10+Math.random()*8}px;opacity:0;`;
+    p.style.cssText = `
+      left:${Math.random()*100}%;
+      top:${Math.random()*20-20}px;
+      animation-duration:${6+Math.random()*10}s;
+      animation-delay:${Math.random()*10}s;
+      font-size:${10+Math.random()*8}px;
+      opacity:0;
+    `;
     container.appendChild(p);
   }
 })();
@@ -824,100 +851,25 @@ SECRET COMMANDS:
 const TEXT_MODELS = [
   'arcee-ai/trinity-large-preview:free',
   'google/gemma-3-27b-it:free',
-  'google/gemma-3-12b-it:free',
   'meta-llama/llama-3.3-70b-instruct:free',
-  'deepseek/deepseek-r1-0528:free',
+  'google/gemma-3-12b-it:free',
+  'mistralai/mistral-7b-instruct:free',
+];
+const VISION_MODELS = [
+  'google/gemma-3-27b-it:free',
+  'meta-llama/llama-3.2-11b-vision-instruct:free',
+  'qwen/qwen2.5-vl-3b-instruct:free',
 ];
 
 // ---- STATE ----
 let S = {
   chats: [], currentId: null,
-  settings: { apiKey:'', model:'arcee-ai/trinity-large-preview:free', prompt:DEFAULT_PROMPT, retries:2 },
+  settings: { apiKey:'', model:'arcee-ai/trinity-large-preview:free', prompt:DEFAULT_PROMPT, darkMode:true, retries:2 },
   memories: [], goals: [], goalFilter:'all',
-  generating: false
+  generating: false, currentImg: null
 };
 
-// =============================================
-// ---- SMART MEMORY EXTRACTOR ----
-// =============================================
-const MEM_PATTERNS = [
-  // Personal info
-  { rx: /mera\s+naam\s+(?:hai\s+)?([A-Za-z\u0900-\u097F\s]+?)(?:\s+hai)?[।.!?]?$/i, type:'personal', fmt: t => `Sir ka naam: ${t.trim()}` },
-  { rx: /main\s+([A-Za-z\u0900-\u097F]+)\s+(?:se|ka|ki|mein)\s+hoon/i, type:'personal', fmt: (t,m) => `Sir ka sheher/place: ${m[1].trim()}` },
-  { rx: /(?:meri\s+age|meri\s+umar|mera\s+age)\s+(?:hai\s+)?(\d+)/i, type:'personal', fmt: (t,m) => `Sir ki age: ${m[1]} saal` },
-  { rx: /main\s+(\d+)\s+saal\s+ka\s+hoon/i, type:'personal', fmt: (t,m) => `Sir ki age: ${m[1]} saal` },
-  { rx: /mera\s+(?:bhai|behen|baap|papa|mummy|maa|beti|beta)\s+(?:ka\s+naam\s+)?(?:hai\s+)?([A-Za-z\u0900-\u097F]+)/i, type:'personal', fmt: (t,m) => `Sir ki family: ${m[0].replace(/mera\s+/i,'').trim()}` },
-
-  // Preferences / likes
-  { rx: /mujhe\s+(.+?)\s+(?:bahut\s+)?pasand\s+hai/i, type:'preference', fmt: (t,m) => `Sir ko pasand hai: ${m[1].trim()}` },
-  { rx: /mera\s+favourite\s+(.+?)\s+(?:hai\s+)?(.+?)(?:[।.!?]|$)/i, type:'preference', fmt: (t,m) => `Sir ka favourite ${m[1].trim()}: ${m[2].trim()}` },
-  { rx: /mujhe\s+(.+?)\s+(?:bilkul\s+)?(?:pasand\s+nahi|nafrat|nahi\s+pasand)/i, type:'preference', fmt: (t,m) => `Sir ko pasand nahi: ${m[1].trim()}` },
-  { rx: /main\s+(.+?)\s+(?:khata|peeta|karti|karta|sunta|dekhta)\s+hoon/i, type:'preference', fmt: (t,m) => `Sir ki habit: ${m[0].trim()}` },
-
-  // Profession / study
-  { rx: /main\s+(.+?)\s+(?:ka\s+)?student\s+hoon/i, type:'personal', fmt: (t,m) => `Sir padh rahe hain: ${m[1].trim()}` },
-  { rx: /main\s+(.+?)\s+(?:mein\s+)?(?:kaam\s+karta|job\s+karta|work\s+karta)\s+hoon/i, type:'personal', fmt: (t,m) => `Sir ka kaam: ${m[1].trim()}` },
-  { rx: /mera\s+(?:college|school|university)\s+(?:ka\s+naam\s+)?(?:hai\s+)?([A-Za-z0-9\s\u0900-\u097F]+?)(?:[।.!?]|$)/i, type:'personal', fmt: (t,m) => `Sir ka college/school: ${m[1].trim()}` },
-
-  // Mood / feelings
-  { rx: /(?:main\s+)?(?:bahut\s+)?(?:thaka|thaki|tired|stressed|tension|pareshaan)\s+hoon/i, type:'mood', fmt: t => `Sir tired/stressed the: "${t.slice(0,80)}"` },
-  { rx: /(?:main\s+)?(?:bahut\s+)?(?:khush|happy|excited|achha\s+feel)\s+(?:hoon|ho\s+raha)/i, type:'mood', fmt: t => `Sir khush the: "${t.slice(0,80)}"` },
-  { rx: /(?:main\s+)?(?:bahut\s+)?(?:sad|dukhi|upset|rona)\s+(?:hoon|aa\s+raha)/i, type:'mood', fmt: t => `Sir sad the: "${t.slice(0,80)}"` },
-
-  // Goals / learning
-  { rx: /main\s+(.+?)\s+(?:sikhna|seekhna|learn)\s+chahta\s+hoon/i, type:'goal', fmt: (t,m) => `Sir sikhna chahte hain: ${m[1].trim()}` },
-  { rx: /(?:mera\s+)?goal\s+(?:hai\s+)?(?:ki\s+)?(.+?)(?:[।.!?]|$)/i, type:'goal', fmt: (t,m) => `Sir ka goal: ${m[1].trim()}` },
-  { rx: /main\s+(.+?)\s+(?:banana|build|develop|create)\s+(?:chahta|chahti)\s+hoon/i, type:'goal', fmt: (t,m) => `Sir banana chahte hain: ${m[1].trim()}` },
-
-  // Events
-  { rx: /(?:aaj|kal|parso)\s+(?:mera|meri)\s+(.+?)\s+(?:hai|tha|thi)/i, type:'event', fmt: t => `Event/plan: "${t.slice(0,80)}"` },
-  { rx: /(\d{1,2})\s+(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\s+(?:ko\s+)?(?:mera|meri)?\s+(.+?)\s+(?:hai|tha|thi)/i, type:'event', fmt: t => `Event: "${t.slice(0,80)}"` },
-  { rx: /exam\s+(?:hai|tha|thi|hoga|hogi)\s+(.+?)(?:[।.!?]|$)/i, type:'event', fmt: (t,m) => `Sir ka exam: ${m[0].trim()}` },
-];
-
-function extractMemoriesFromText(userText) {
-  if(!userText || typeof userText !== 'string') return [];
-  const found = [];
-  const lower = userText.toLowerCase();
-
-  for(const pat of MEM_PATTERNS) {
-    const match = userText.match(pat.rx);
-    if(match) {
-      try {
-        const memText = pat.fmt(userText, match);
-        if(memText && memText.length > 5 && !isDuplicate(memText)) {
-          found.push({ text: memText, type: pat.type });
-        }
-      } catch(e) {}
-    }
-  }
-
-  // Generic: "mera X Y hai" → info
-  const genericInfo = userText.match(/mera\s+([a-zA-Z\u0900-\u097F]+)\s+([a-zA-Z0-9\u0900-\u097F\s]+?)\s+hai/gi);
-  if(genericInfo) {
-    genericInfo.forEach(m => {
-      if(m.length > 8 && m.length < 80 && !isDuplicate(m)) {
-        found.push({ text: `Sir ke baare mein: ${m}`, type:'info' });
-      }
-    });
-  }
-
-  return found;
-}
-
-function isDuplicate(newText) {
-  if(!S.memories || !S.memories.length) return false;
-  const newLower = newText.toLowerCase().slice(0,40);
-  return S.memories.some(m => {
-    const existing = m.text.toLowerCase().slice(0,40);
-    return existing === newLower ||
-      (newLower.length > 10 && existing.includes(newLower.slice(0,20)));
-  });
-}
-
-// =============================================
 // ---- TTS ----
-// =============================================
 let ttsVoices = [];
 function loadVoices() {
   if(!('speechSynthesis' in window)) return;
@@ -926,97 +878,30 @@ function loadVoices() {
 }
 if('speechSynthesis' in window) {
   speechSynthesis.onvoiceschanged = loadVoices;
-  [200,800,2000,4000].forEach(d=>setTimeout(loadVoices,d));
+  [100,500,1500].forEach(d=>setTimeout(loadVoices,d));
 }
-
-function cleanForTTS(text) {
-  return text
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/[\u{1F300}-\u{1F9FF}]/gu, '')
-    .replace(/[\u{2600}-\u{26FF}]/gu, '')
-    .replace(/[\u{2700}-\u{27BF}]/gu, '')
-    .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
-    .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
-    .replace(/[*#`_~>|]/g, '')
-    .replace(/```[\s\S]*?```/g, ' code block ')
-    .replace(/https?:\/\/\S+/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function splitIntoChunks(text, maxLen=180) {
-  const sentences = text.match(/[^।।.!?]+[।।.!?]+/g) || [text];
-  const chunks = [];
-  let current = '';
-  for(const s of sentences) {
-    if((current+s).length > maxLen) {
-      if(current.trim()) chunks.push(current.trim());
-      current = s;
-    } else { current += s; }
-  }
-  if(current.trim()) chunks.push(current.trim());
-  return chunks.length ? chunks : [text];
-}
-
-function getBestVoice(voices) {
-  const isHindi = v => v.lang.replace('_','-').toLowerCase().startsWith('hi');
-  const isEnIN  = v => v.lang==='en-IN'||v.lang==='en_IN';
-  return (
-    voices.find(v=>isHindi(v)&&/female|woman/i.test(v.name)) ||
-    voices.find(v=>isHindi(v)) ||
-    voices.find(v=>isEnIN(v)) ||
-    voices.find(v=>/female|zira|samantha|victoria|karen|veena|lekha/i.test(v.name)) ||
-    voices[0] || null
-  );
-}
-
-let ttsChunks=[], ttsChunkIdx=0, ttsBtn=null, ttsSpeed=0.9;
 
 function speakText(btn, text, speed) {
-  if(!('speechSynthesis' in window)) { showToast('❌ TTS supported nahi hai'); return; }
+  if(!('speechSynthesis' in window)) { showToast('❌ TTS not supported'); return; }
   if(btn.classList.contains('playing')) {
-    speechSynthesis.cancel();
-    btn.classList.remove('playing'); btn.textContent='▶';
-    ttsChunks=[]; ttsChunkIdx=0; ttsBtn=null;
-    return;
+    speechSynthesis.cancel(); btn.classList.remove('playing'); btn.textContent='▶'; return;
   }
   speechSynthesis.cancel();
-  const clean = cleanForTTS(text);
-  if(!clean) { showToast('Kuch bolne ke liye nahi mila'); return; }
-  const freshVoices = speechSynthesis.getVoices();
-  if(freshVoices.length > 0) ttsVoices = freshVoices;
-  const voices = ttsVoices.length ? ttsVoices : freshVoices;
-  const voice = getBestVoice(voices);
-  ttsChunks = splitIntoChunks(clean, 150);
-  ttsChunkIdx = 0; ttsBtn = btn; ttsSpeed = parseFloat(speed)||0.85;
+  const clean = text.replace(/<[^>]*>/g,' ').replace(/[*#`_]/g,'').replace(/\n/g,' ').trim();
+  if(!clean) return;
+  const utt = new SpeechSynthesisUtterance(clean);
+  utt.rate = parseFloat(speed)||0.9; utt.pitch=1.05; utt.volume=1;
+  loadVoices();
+  const voices = ttsVoices.length ? ttsVoices : speechSynthesis.getVoices();
+  let voice = voices.find(v=>v.lang==='hi-IN')||voices.find(v=>v.lang.startsWith('hi'))||voices.find(v=>/female|zira|samantha|victoria|karen/i.test(v.name));
+  if(!voice && voices.length) voice=voices[0];
+  if(voice){utt.voice=voice;utt.lang=voice.lang;}else{utt.lang='hi-IN';}
   btn.classList.add('playing'); btn.textContent='⏸';
-  function speakNext() {
-    if(ttsChunkIdx>=ttsChunks.length) {
-      if(ttsBtn){ttsBtn.classList.remove('playing');ttsBtn.textContent='▶';}
-      ttsBtn=null; ttsChunks=[]; ttsChunkIdx=0; return;
-    }
-    if(!ttsBtn) return;
-    const chunk = ttsChunks[ttsChunkIdx];
-    if(!chunk||!chunk.trim()){ttsChunkIdx++;speakNext();return;}
-    const utt = new SpeechSynthesisUtterance(chunk);
-    utt.rate=ttsSpeed; utt.pitch=1.05; utt.volume=1.0;
-    if(voice){utt.voice=voice;utt.lang=voice.lang;}else{utt.lang='hi-IN';}
-    let ka = setInterval(()=>{if(speechSynthesis.speaking&&!speechSynthesis.paused){speechSynthesis.pause();speechSynthesis.resume();}},8000);
-    utt.onend=function(){clearInterval(ka);ttsChunkIdx++;setTimeout(speakNext,100);};
-    utt.onerror=function(e){clearInterval(ka);if(e.error==='interrupted'||e.error==='canceled')return;ttsChunkIdx++;setTimeout(speakNext,150);};
-    speechSynthesis.speak(utt);
-  }
-  setTimeout(speakNext, 300);
-}
-
-function handleTTS(btn) {
-  const bar = btn.closest('.tts-bar');
-  const sel = bar ? bar.querySelector('.tts-speed') : null;
-  const speed = sel ? sel.value : '0.9';
-  const bubble = btn.closest('.msg-bubble');
-  const prose = bubble ? bubble.querySelector('.prose') : null;
-  const text = prose ? prose.innerText||prose.textContent : '';
-  if(text) speakText(btn, text, speed);
+  let ka;
+  utt.onstart=()=>{ ka=setInterval(()=>{ if(speechSynthesis.speaking&&!speechSynthesis.paused){speechSynthesis.pause();speechSynthesis.resume();}else if(!speechSynthesis.speaking)clearInterval(ka); },8000); };
+  utt.onend=()=>{ clearInterval(ka); btn.classList.remove('playing'); btn.textContent='▶'; };
+  utt.onerror=(e)=>{ clearInterval(ka); btn.classList.remove('playing'); btn.textContent='▶'; if(e.error!=='interrupted'&&e.error!=='canceled') showToast('🔊 TTS error — retry karo'); };
+  setTimeout(()=>speechSynthesis.speak(utt),100);
 }
 
 // ---- SPEECH RECOGNITION ----
@@ -1025,11 +910,11 @@ function initSR() {
   const SRClass = window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SRClass) return;
   SR = new SRClass();
-  SR.lang='hi_IN'; SR.interimResults=true; SR.continuous=false;
-  SR.onstart=()=>{isRec=true;document.getElementById('mic-btn').classList.add('recording');document.getElementById('rec-status').style.display='inline';showToast('🎙️ Bol do...');};
-  SR.onresult=(e)=>{let fin='';for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)fin+=e.results[i][0].transcript;if(fin){document.getElementById('txt-input').value=fin;}};
-  SR.onend=()=>{isRec=false;document.getElementById('mic-btn').classList.remove('recording');document.getElementById('rec-status').style.display='none';};
-  SR.onerror=()=>{isRec=false;document.getElementById('mic-btn').classList.remove('recording');document.getElementById('rec-status').style.display='none';showToast('🎙️ Dobara try karo');};
+  SR.lang='hi-IN'; SR.interimResults=true; SR.continuous=false;
+  SR.onstart=()=>{ isRec=true; document.getElementById('mic-btn').classList.add('recording'); document.getElementById('rec-status').style.display='inline'; showToast('🎙️ Bol do...'); };
+  SR.onresult=(e)=>{ let fin=''; for(let i=e.resultIndex;i<e.results.length;i++) if(e.results[i].isFinal) fin+=e.results[i][0].transcript; if(fin){document.getElementById('txt-input').value=fin;} };
+  SR.onend=()=>{ isRec=false; document.getElementById('mic-btn').classList.remove('recording'); document.getElementById('rec-status').style.display='none'; };
+  SR.onerror=()=>{ isRec=false; document.getElementById('mic-btn').classList.remove('recording'); document.getElementById('rec-status').style.display='none'; showToast('🎙️ Dobara try karo'); };
 }
 
 // ---- TOAST ----
@@ -1051,53 +936,15 @@ function getIST(){
   return{time,date,tod};
 }
 
+// ---- MARKDOWN ----
 function renderMd(txt) {
   if(typeof marked==='undefined') return txt.replace(/\n/g,'<br>');
   return marked.parse(txt||'');
 }
 
-// =============================================
-// ---- MEMORY CONTEXT BUILDER ----
-// (Structured format taaki model clearly samjhe)
-// =============================================
-function buildMemoryContext() {
-  if(!S.memories||!S.memories.length) return '';
-
-  // Group by type
-  const groups = {};
-  S.memories.forEach(m => {
-    if(!groups[m.type]) groups[m.type] = [];
-    groups[m.type].push(m.text);
-  });
-
-  const typeEmoji = {
-    personal:'👤', preference:'❤️', info:'💡',
-    goal:'🎯', mood:'💭', event:'📅'
-  };
-  const typeLabel = {
-    personal:'Personal Info', preference:'Preferences',
-    info:'Info', goal:'Goals', mood:'Mood/Feelings', event:'Events'
-  };
-
-  let ctx = '\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
-  ctx += '🧠 VANI MEMORY — Sir ke baare mein jo tum jaanti ho:\n';
-  ctx += '(YEH SAB YAAD RAKHO. Jab bhi relevant ho, use karo.)\n';
-  ctx += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
-
-  for(const type of ['personal','preference','goal','event','mood','info']) {
-    if(groups[type]&&groups[type].length) {
-      ctx += `\n${typeEmoji[type]||'•'} ${typeLabel[type]||type.toUpperCase()}:\n`;
-      groups[type].forEach(t => { ctx += `  • ${t}\n`; });
-    }
-  }
-  ctx += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
-  ctx += 'IMPORTANT: Jab Sir pooche "main kahan rehta hoon", "mera naam kya hai" etc, to upar di gayi memory se seedha answer do. Kabhi mat kaho "mujhe nahi pata" agar memory mein hai.\n';
-  return ctx;
-}
-
 // ---- API CALL WITH RETRY ----
-async function callAPI(messages) {
-  const models = [S.settings.model, ...TEXT_MODELS.filter(m=>m!==S.settings.model)];
+async function callAPI(messages, hasImg) {
+  const models = hasImg ? VISION_MODELS : [S.settings.model, ...TEXT_MODELS.filter(m=>m!==S.settings.model)];
   let lastErr=null;
   for(let i=0;i<models.length;i++) {
     const model=models[i];
@@ -1107,7 +954,7 @@ async function callAPI(messages) {
       const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
         method:'POST',
         headers:{'Authorization':`Bearer ${S.settings.apiKey}`,'Content-Type':'application/json','HTTP-Referer':location.href,'X-Title':'Vani AI'},
-        body:JSON.stringify({model,messages,stream:true,max_tokens:2048,temperature:0.8,frequency_penalty:0.3}),
+        body:JSON.stringify({model,messages,stream:true,max_tokens:2048,temperature:0.8}),
         signal:ctrl.signal
       });
       clearTimeout(tid);
@@ -1122,34 +969,32 @@ async function callAPI(messages) {
   throw lastErr;
 }
 
-// =============================================
 // ---- SEND ----
-// =============================================
 async function sendMsg() {
   if(S.generating) return;
   const key=S.settings.apiKey;
   if(!key||!key.startsWith('sk-or-')){showToast('❌ API key daalo pehle');app.openSettings();return;}
   const txt=document.getElementById('txt-input').value.trim();
-  if(!txt){showToast('Kuch type karo...');return;}
+  const img=S.currentImg;
+  if(!txt&&!img){showToast('Kuch type karo ya image attach karo');return;}
 
   if(!S.currentId) app.newChat();
   const chat=S.chats.find(c=>c.id===S.currentId);
   if(!chat) return;
 
-  if(chat.messages.length===0){chat.title=txt.slice(0,36)+(txt.length>36?'…':'');renderSidebar();}
+  if(chat.messages.length===0){chat.title=(txt||'Image').slice(0,36)+(txt.length>36?'…':'');renderSidebar();}
 
-  // ---- SMART MEMORY EXTRACTION from user message ----
-  const newMems = extractMemoriesFromText(txt);
-  let savedMemCount = 0;
-  newMems.forEach(m => {
-    addMem(m.text, m.type, true); // silent=true
-    savedMemCount++;
-  });
-
-  chat.messages.push({role:'user',content:txt});
+  let userContent;
+  if(img){
+    userContent=[{type:'text',text:txt||'Is image ke baare mein batao'},{type:'image_url',image_url:{url:`data:${img.type};base64,${img.data}`}}];
+  } else {
+    userContent=txt;
+  }
+  chat.messages.push({role:'user',content:userContent,imgSrc:img?`data:${img.type};base64,${img.data}`:null});
 
   document.getElementById('txt-input').value='';
   document.getElementById('txt-input').style.height='auto';
+  app.removeImg();
 
   const aiId='m-'+Date.now();
   chat.messages.push({role:'assistant',content:'',id:aiId,streaming:true});
@@ -1160,38 +1005,15 @@ async function sendMsg() {
   const ist=getIST();
   const isFirst=chat.messages.filter(m=>m.role==='user').length===1;
   const sysPrompt=S.settings.prompt||DEFAULT_PROMPT;
-  const greetRule=isFirst
-    ?`FIRST MESSAGE: ${ist.tod} greeting do briefly, phir answer.`
-    :`FOLLOW-UP: No greeting, seedha answer.`;
+  const greetRule=isFirst?`FIRST MESSAGE: ${ist.tod} greeting do briefly, phir answer.`:`FOLLOW-UP: No greeting, seedha answer.`;
+  const memCtx=S.memories.length?'\n\n[VANI MEMORY]\n'+S.memories.slice(-25).map(m=>`[${m.type.toUpperCase()}] ${m.text} (${m.date})`).join('\n'):'';
+  const goalCtx=S.goals.filter(g=>!g.done).length?'\n\n[PENDING GOALS]\n'+S.goals.filter(g=>!g.done).slice(0,8).map((g,i)=>`${i+1}. ${g.text}`).join('\n'):'';
+  const finalSys=sysPrompt+`\n\n[IST: ${ist.time} | ${ist.date} | ${ist.tod}]\n${greetRule}`+memCtx+goalCtx+'\n\n[MEMORY RULE] Agar Sir ne kuch important share kiya (mood/goal/event/info), response ke END mein NEW LINE par likho: VANI_MEM:type:text\nMax 2. User ko KABHI mat dikhao ye line.';
 
-  const memCtx = buildMemoryContext();
-  const goalCtx = S.goals.filter(g=>!g.done).length
-    ? '\n\n🎯 SIR KE PENDING GOALS:\n'+S.goals.filter(g=>!g.done).slice(0,8).map((g,i)=>`${i+1}. ${g.text}`).join('\n')
-    : '';
-
-  const vaniMemRule = `
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📝 MEMORY SAVE RULE:
-Agar Sir ne conversation mein kuch important share kiya ho jo memory mein NAHI hai, response ke bilkul END mein (new line par) likho:
-VANI_MEM:type:text
-(type: personal/preference/info/goal/mood/event)
-Max 2 entries. Ye line user ko dikhani NAHI hai. Sirf naya info save karo jo pehle se memory mein nahi hai.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
-
-  const finalSys = sysPrompt
-    + `\n\n[IST: ${ist.time} | ${ist.date} | ${ist.tod}]\n${greetRule}`
-    + memCtx + goalCtx + vaniMemRule;
-
-  const apiMsgs=[
-    {role:'system',content:finalSys},
-    ...chat.messages
-      .filter(m=>m.id!==aiId&&!(m.streaming&&!m.content))
-      .map(m=>({role:m.role, content:m.content||''}))
-  ];
+  const apiMsgs=[{role:'system',content:finalSys},...chat.messages.filter(m=>m.id!==aiId&&!(m.streaming&&!m.content)).map(m=>({role:m.role,content:m.content}))];
 
   try {
-    const {res,model}=await callAPI(apiMsgs);
+    const {res,model}=await callAPI(apiMsgs,!!img);
     const reader=res.body.getReader();
     const dec=new TextDecoder();
     let full='';
@@ -1222,29 +1044,28 @@ Max 2 entries. Ye line user ko dikhani NAHI hai. Sirf naya info save karo jo peh
 
     if(!full.trim()) full='Sir, model ne iss baar respond nahi kiya 😕 Dobara try karein ya model change karein.';
 
-    // ---- Extract VANI_MEM from AI response ----
-    let aiMemCount = 0;
+    // Extract memories
     full.split('\n').forEach(line=>{
       const t=line.trim();
       if(t.startsWith('VANI_MEM:')){
         const parts=t.split(':');
-        if(parts.length>=3){
-          const type=parts[1].trim();
-          const text=parts.slice(2).join(':').trim();
-          if(text && !isDuplicate(text)){
-            addMem(text,type,true);
-            aiMemCount++;
-          }
-        }
+        if(parts.length>=3){const type=parts[1].trim();const text=parts.slice(2).join(':').trim();if(text)addMem(text,type);}
       }
     });
+    // Auto-detect from user msg
+    const lastUser=chat.messages.filter(m=>m.role==='user').slice(-2,-1)[0];
+    if(lastUser&&typeof lastUser.content==='string'){
+      const u=lastUser.content.toLowerCase();
+      if(u.includes('thak')||u.includes('tired')||u.includes('stressed')) addMem('Sir tired/stressed: "'+lastUser.content.slice(0,60)+'"','mood');
+      else if(u.includes('khush')||u.includes('happy')) addMem('Sir was happy: "'+lastUser.content.slice(0,60)+'"','mood');
+      if(u.includes('sikhna')||u.includes('learn')||u.includes('seekhna')) addMem('Learning goal: "'+lastUser.content.slice(0,80)+'"','goal');
+      if(u.includes('exam')||u.includes('interview')||u.includes('test')) addMem('Exam/interview: "'+lastUser.content.slice(0,80)+'"','event');
+    }
 
-    const totalNewMem = savedMemCount + aiMemCount;
     const cleanFull=full.split('\n').filter(l=>!l.trim().startsWith('VANI_MEM:')).join('\n').trim();
     chat.messages[chat.messages.length-1].content=cleanFull;
     chat.messages[chat.messages.length-1].streaming=false;
     chat.messages[chat.messages.length-1].model=model;
-    if(totalNewMem > 0) chat.messages[chat.messages.length-1].memSaved=totalNewMem;
 
     document.getElementById('model-lbl').textContent=model.split('/').pop().replace(':free','');
 
@@ -1271,7 +1092,7 @@ function renderChat() {
   const mc=document.getElementById('messages');
   const chat=S.chats.find(c=>c.id===S.currentId);
   if(!chat||!chat.messages.length){
-    mc.innerHTML=`<div id="welcome"><div class="w-avatar">✦</div><div class="w-title">VANI</div><p class="w-sub">${S.settings.apiKey?'Ready! Kuch bhi pocho Sir 🌿':'Settings mein API key daalo pehle.'}</p><div class="w-chips"><div class="w-chip" onclick="app.chip('Mujhe motivate karo 🚀')">Mujhe motivate karo 🚀</div><div class="w-chip" onclick="app.chip('Code review karo 💻')">Code review karo 💻</div><div class="w-chip" onclick="app.chip('Aaj ka plan banao 📅')">Aaj ka plan banao 📅</div><div class="w-chip" onclick="app.chip('Apne bare mein sab kuch bata jitna yaad hai 🧠')">Mujhe yaad dilao 🧠</div></div></div>`;
+    mc.innerHTML=`<div id="welcome"><div class="w-avatar">✦</div><div class="w-title">VANI</div><p class="w-sub">${S.settings.apiKey?'Ready! Kuch bhi pocho Sir 🌿':'Settings mein API key daalo pehle.'}</p><div class="w-chips"><div class="w-chip" onclick="app.chip('Mujhe motivate karo 🚀')">Mujhe motivate karo 🚀</div><div class="w-chip" onclick="app.chip('Code review karo 💻')">Code review karo 💻</div><div class="w-chip" onclick="app.chip('Aaj ka plan banao 📅')">Aaj ka plan banao 📅</div><div class="w-chip" onclick="app.chip('Kuch sikhaao mujhe 📚')">Kuch sikhaao mujhe 📚</div></div></div>`;
     return;
   }
   mc.innerHTML='';
@@ -1284,15 +1105,16 @@ function renderChat() {
     if(msg.streaming&&!msg.content){
       bodyHtml=`<div class="msg-bubble bubble-vani"><div class="typing-dots"><div class="td td1"></div><div class="td td2"></div><div class="td td3"></div></div></div>`;
     } else {
+      const visible=(msg.content||'').split('\n').filter(l=>!l.trim().startsWith('VANI_MEM:')).join('\n');
+      let content='';
+      if(isU&&msg.imgSrc) content+=`<img class="msg-img" src="${msg.imgSrc}">`;
       if(isU){
-        bodyHtml='<div class="msg-bubble bubble-user"><div>'+esc(msg.content||'')+'</div></div>';
+        const txtContent=typeof msg.content==='string'?msg.content:(Array.isArray(msg.content)?msg.content.find(c=>c.type==='text')?.text||'':'');
+        content+=`<div>${esc(txtContent)}</div>`;
+        bodyHtml=`<div class="msg-bubble bubble-user">${content}</div>`;
       } else {
-        const visible=(msg.content||'').split('\n').filter(l=>!l.trim().startsWith('VANI_MEM:')).join('\n');
         const proseClass='prose'+(msg.streaming?' stream-cursor':'');
-        const modelTag=msg.model?'<div style="font-size:10px;color:var(--text2);margin-top:4px;">🤖 '+msg.model.split('/').pop().replace(':free','')+'</div>':'';
-        const ttsHtml=!msg.streaming?'<div class="tts-bar"><button class="tts-play" onclick="handleTTS(this)">▶</button><select class="tts-speed"><option value="0.7">🐢</option><option value="0.9" selected>▶</option><option value="1.2">🐇</option></select><span style="font-size:11px;opacity:0.7;">Sunlo</span></div>':'';
-        const memPill=(!msg.streaming&&msg.memSaved)?`<div class="mem-saved-pill">🧠 ${msg.memSaved} cheez${msg.memSaved>1?'ein':''} yaad kar li</div>`:'';
-        bodyHtml='<div class="msg-bubble bubble-vani"><div class="'+proseClass+'">'+renderMd(visible)+'</div>'+ttsHtml+memPill+modelTag+'</div>';
+        bodyHtml=`<div class="msg-bubble bubble-vani"><div class="${proseClass}">${renderMd(visible)}</div>${!msg.streaming?`<div class="tts-bar"><button class="tts-play" data-text="${esc(visible)}" onclick="speakText(this,this.dataset.text,this.nextElementSibling.value)">▶</button><select class="tts-speed"><option value="0.7">🐢</option><option value="0.9" selected>▶</option><option value="1.2">🐇</option></select><span style="font-size:11px;opacity:0.7;">Sunlo</span></div>`:''}${msg.model?`<div style="font-size:10px;color:var(--text2);margin-top:4px;padding-left:2px;">🤖 ${msg.model.split('/').pop().replace(':free','')}</div>`:''}`;
       }
     }
     row.innerHTML=`<div class="msg-av ${isU?'av-user':'av-vani'}">${isU?'👤':'V'}</div><div class="msg-body"><div class="msg-label">${isU?'Sir':'Vani'}</div>${bodyHtml}</div>`;
@@ -1308,31 +1130,25 @@ function renderSidebar() {
   document.getElementById('model-lbl').textContent=S.settings.model.split('/').pop().replace(':free','');
   const list=document.getElementById('chat-list');
   if(!S.chats.length){list.innerHTML='<div style="padding:18px 14px;text-align:center;color:var(--muted);font-size:12px;">No conversations yet</div>';return;}
-  list.innerHTML=S.chats.map(c=>`<div class="chat-item${c.id===S.currentId?' active':''}"><div class="ci-dot"></div><div class="ci-title" onclick="app.loadChat('${c.id}')">${esc(c.title||'Conversation')}</div><div class="ci-actions"><button class="ci-btn" onclick="app.renameChat(event,'${c.id}')">✏️</button><button class="ci-btn del" onclick="app.deleteChat(event,'${c.id}')">🗑️</button></div></div>`).join('');
+  list.innerHTML=S.chats.map(c=>`<div class="chat-item${c.id===S.currentId?' active':''}" ><div class="ci-dot"></div><div class="ci-title" onclick="app.loadChat('${c.id}')">${esc(c.title||'Conversation')}</div><div class="ci-actions"><button class="ci-btn" onclick="app.renameChat(event,'${c.id}')">✏️</button><button class="ci-btn del" onclick="app.deleteChat(event,'${c.id}')">🗑️</button></div></div>`).join('');
 }
 
 // ---- MEMORY ----
-function addMem(text, type, silent=false) {
+function addMem(text,type){
   if(!S.memories) S.memories=[];
-  if(isDuplicate(text)) return;
   const d=new Date().toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short',year:'numeric'});
   S.memories.push({text,type:type||'info',date:d,ts:Date.now()});
-  save();
-  updateCounts();
-  if(!silent) showToast('🧠 Memory saved!');
+  save(); updateCounts();
 }
-
 function renderMemList(){
   const c=document.getElementById('mem-list');
-  if(!S.memories||!S.memories.length){c.innerHTML='<div class="empty-state"><div class="empty-icon">🧠</div>No memories yet<br><small style="color:var(--muted);margin-top:8px;display:block;">Jab bhi Vani se apne baare mein baat karo,<br>woh yaad rakhegi ✨</small></div>';return;}
-  const typeEmoji={personal:'👤',preference:'❤️',info:'💡',goal:'🎯',mood:'💭',event:'📅'};
+  if(!S.memories||!S.memories.length){c.innerHTML='<div class="empty-state"><div class="empty-icon">🧠</div>No memories yet</div>';return;}
   c.innerHTML=[...S.memories].reverse().map((m,i)=>{
     const ri=S.memories.length-1-i;
-    const tc=m.type==='mood'?'tag-mood':m.type==='goal'?'tag-goal':m.type==='event'?'tag-event':m.type==='personal'?'tag-personal':m.type==='preference'?'tag-preference':'tag-info';
-    return`<div class="mem-item"><div style="font-size:15px;">${typeEmoji[m.type]||'💡'}</div><div style="flex:1;"><div class="mem-text">${esc(m.text)}</div><div class="mem-meta"><span class="mem-tag ${tc}">${m.type}</span>${m.date||''}</div></div><button class="mem-del" onclick="app.deleteMem(${ri})">✕</button></div>`;
+    const tc=m.type==='mood'?'tag-mood':m.type==='goal'?'tag-goal':m.type==='event'?'tag-event':'tag-info';
+    return`<div class="mem-item"><div style="font-size:15px;">${m.type==='mood'?'💭':m.type==='goal'?'🎯':m.type==='event'?'📅':'💡'}</div><div style="flex:1;"><div class="mem-text">${esc(m.text)}</div><div class="mem-meta"><span class="mem-tag ${tc}">${m.type}</span>${m.date||''}</div></div><button class="mem-del" onclick="app.deleteMem(${ri})">✕</button></div>`;
   }).join('');
 }
-
 function updateCounts(){
   const mc=document.getElementById('mem-count');
   const gc=document.getElementById('goal-count');
@@ -1359,13 +1175,12 @@ function renderGoalsList(){
 const app = {
   init(){
     try{
-      // Try loading new key first, fallback to old key
       const saved=JSON.parse(localStorage.getItem('vani_final')||'{}');
       S={...S,...saved};
       S.settings.prompt=DEFAULT_PROMPT;
       if(!S.memories) S.memories=[];
       if(!S.goals) S.goals=[];
-    }catch(e){localStorage.removeItem('vani_v2');}
+    }catch(e){localStorage.removeItem('vani_final');}
 
     if(typeof marked!=='undefined') marked.use({breaks:true,gfm:true});
     initSR();
@@ -1433,13 +1248,12 @@ const app = {
   openMemory(){renderMemList();document.getElementById('memory-modal').classList.add('open');this.closeSidebar();},
   closeMemory(){document.getElementById('memory-modal').classList.remove('open');},
   deleteMem(i){S.memories.splice(i,1);save();renderMemList();updateCounts();},
-  clearAllMem(){if(!confirm('Saari memories delete karein? 🥺'))return;S.memories=[];save();renderMemList();updateCounts();showToast('🗑️ Memories cleared');},
+  clearAllMem(){if(!confirm('Saari memories delete karein? 🥺'))return;S.memories=[];save();renderMemList();updateCounts();},
   addMemManual(){
     const txt=document.getElementById('mem-txt').value.trim();
     const type=document.getElementById('mem-type').value;
     if(!txt)return;
     addMem(txt,type);document.getElementById('mem-txt').value='';renderMemList();
-    showToast('🧠 Memory saved!');
   },
 
   openGoals(){renderGoalsList();document.getElementById('goals-modal').classList.add('open');this.closeSidebar();},
@@ -1463,14 +1277,34 @@ const app = {
   toggleMic(){
     if(!SR){showToast('❌ Browser voice support nahi hai');return;}
     if(isRec){SR.stop();}else{SR.start();}
+  },
+  handleImg(e){
+    const file=e.target.files[0];if(!file)return;
+    if(file.size>5*1024*1024){showToast('Image too large (max 5MB)');return;}
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      S.currentImg={data:ev.target.result.split(',')[1],type:file.type};
+      document.getElementById('img-preview-thumb').src=ev.target.result;
+      document.getElementById('img-preview-area').style.display='block';
+      showToast('📷 Image ready!');
+    };
+    reader.readAsDataURL(file);
+    e.target.value='';
+  },
+  removeImg(){
+    S.currentImg=null;
+    document.getElementById('img-preview-area').style.display='none';
+    document.getElementById('img-preview-thumb').src='';
   }
 };
 
 document.addEventListener('DOMContentLoaded',()=>app.init());
 </script>
 
+<!-- Highlight.js -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<!-- Marked -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </body>
 </html>
