@@ -343,12 +343,6 @@ body::before {
 }
 @keyframes blink { 50%{opacity:0;} }
 
-/* RETRY */
-.retry-bar {
-  display:flex; align-items:center; gap:7px;
-  font-size:11px; color:var(--gold); padding:4px 0;
-}
-
 /* ERROR */
 .err-box {
   background:rgba(255,80,80,0.06);
@@ -665,9 +659,9 @@ textarea.form-inp { resize:none; min-height:90px; line-height:1.6; }
         <button class="input-tool" id="mic-btn" onclick="app.toggleMic()" title="Voice">🎙️</button>
         <button class="input-tool" onclick="document.getElementById('img-file').click()" title="Image">📷</button>
         <span id="rec-status">🔴 Recording...</span>
+        <!-- ✅ Enter se send BAND - sirf send button se hoga -->
         <textarea id="txt-input" placeholder="Vani se kuch bhi pocho..." rows="1"
-          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,130)+'px'"
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();app.send();}"></textarea>
+          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,130)+'px'"></textarea>
         <button id="send-btn" onclick="app.send()">➤</button>
       </div>
     </div>
@@ -687,6 +681,13 @@ textarea.form-inp { resize:none; min-height:90px; line-height:1.6; }
         <input type="password" class="form-inp" id="s-key" placeholder="sk-or-v1-...">
         <div style="font-size:11px;color:var(--text2);margin-top:5px;">
           <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--teal);">→ Free key lo openrouter.ai se</a>
+        </div>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl">⚡ Groq API Key (Fallback - Fast!)</label>
+        <input type="password" class="form-inp" id="s-groq-key" placeholder="gsk_...">
+        <div style="font-size:11px;color:var(--text2);margin-top:5px;">
+          <a href="https://console.groq.com/keys" target="_blank" style="color:var(--cyan);">→ Free key lo console.groq.com se</a>
         </div>
       </div>
       <div class="form-grp">
@@ -773,11 +774,6 @@ textarea.form-inp { resize:none; min-height:90px; line-height:1.6; }
 </div>
 
 <script>
-// =============================================
-// VANI AI — Complete Version
-// Aurora Theme + All Features
-// =============================================
-
 window.onerror = function(msg) {
   const l = document.getElementById('loading');
   if(l) l.innerHTML = '<div style="color:#ff5555;text-align:center;padding:30px;font-family:sans-serif;"><div style="font-size:24px;margin-bottom:10px;">⚠️</div><div style="font-size:12px;color:#6a8;margin-bottom:14px;">'+msg+'</div><button onclick="location.reload()" style="padding:10px 20px;background:linear-gradient(135deg,#00ff96,#00c8ff);border:none;border-radius:10px;color:#000;font-size:13px;cursor:pointer;">Reload</button></div>';
@@ -792,14 +788,7 @@ window.onerror = function(msg) {
     const p = document.createElement('div');
     p.className = 'petal';
     p.textContent = petals[Math.floor(Math.random()*petals.length)];
-    p.style.cssText = `
-      left:${Math.random()*100}%;
-      top:${Math.random()*20-20}px;
-      animation-duration:${6+Math.random()*10}s;
-      animation-delay:${Math.random()*10}s;
-      font-size:${10+Math.random()*8}px;
-      opacity:0;
-    `;
+    p.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*20-20}px;animation-duration:${6+Math.random()*10}s;animation-delay:${Math.random()*10}s;font-size:${10+Math.random()*8}px;opacity:0;`;
     container.appendChild(p);
   }
 })();
@@ -826,12 +815,16 @@ Balance maintain karo — obsessive nahi.
 
 SKILLS: Coding, teaching, life advice, motivation, emotional support, general knowledge — sab.
 
-TEACHING STYLE:
+TEACHING STYLE (Python & Coding):
 - Ek topic ek message mein sirf
-- Real-life analogy se shuru karo
-- Code example do
-- Ek practical task do
-- Ruk jao — next topic tab jab Sir bole
+- Har concept is format mein samjhao:
+  1. WHAT: Simple words mein explain karo (analogy use karo)
+  2. WHY: Real-life mein kab kaam aata hai
+  3. HOW: Code example do — har line pe comment lagao
+  4. TRY THIS: Ek chota practical task do
+- STRICT RULE: Ek topic explain karne ke baad HAMESHA ruko. Agle topic pe TAB JAO jab Sir explicitly "next", "aage bado", "samajh gaya" likhe.
+- TRY THIS dene ke baad HAMESHA poochho: "Output kya aaya Sir? 👀"
+- Agar Sir bole "samajh nahi aaya" — same concept ko NAYE analogy se samjhao, repeat mat karo.
 
 EMOJIS: Context ke hisaab se, max 2-4 per message. Spam nahi.
 
@@ -864,7 +857,7 @@ const VISION_MODELS = [
 // ---- STATE ----
 let S = {
   chats: [], currentId: null,
-  settings: { apiKey:'', model:'arcee-ai/trinity-large-preview:free', prompt:DEFAULT_PROMPT, darkMode:true, retries:2 },
+  settings: { apiKey:'', groqKey:'', model:'arcee-ai/trinity-large-preview:free', prompt:DEFAULT_PROMPT, retries:2 },
   memories: [], goals: [], goalFilter:'all',
   generating: false, currentImg: null
 };
@@ -900,7 +893,7 @@ function speakText(btn, text, speed) {
   let ka;
   utt.onstart=()=>{ ka=setInterval(()=>{ if(speechSynthesis.speaking&&!speechSynthesis.paused){speechSynthesis.pause();speechSynthesis.resume();}else if(!speechSynthesis.speaking)clearInterval(ka); },8000); };
   utt.onend=()=>{ clearInterval(ka); btn.classList.remove('playing'); btn.textContent='▶'; };
-  utt.onerror=(e)=>{ clearInterval(ka); btn.classList.remove('playing'); btn.textContent='▶'; if(e.error!=='interrupted'&&e.error!=='canceled') showToast('🔊 TTS error — retry karo'); };
+  utt.onerror=(e)=>{ clearInterval(ka); btn.classList.remove('playing'); btn.textContent='▶'; if(e.error!=='interrupted'&&e.error!=='canceled') showToast('🔊 TTS error'); };
   setTimeout(()=>speechSynthesis.speak(utt),100);
 }
 
@@ -942,12 +935,14 @@ function renderMd(txt) {
   return marked.parse(txt||'');
 }
 
-// ---- API CALL WITH RETRY ----
+// ---- API CALL WITH GROQ FALLBACK ----
 async function callAPI(messages, hasImg) {
-  const models = hasImg ? VISION_MODELS : [S.settings.model, ...TEXT_MODELS.filter(m=>m!==S.settings.model)];
-  let lastErr=null;
-  for(let i=0;i<models.length;i++) {
-    const model=models[i];
+  // OpenRouter models
+  const orModels = hasImg ? VISION_MODELS : [S.settings.model, ...TEXT_MODELS.filter(m=>m!==S.settings.model)];
+  
+  // Try OpenRouter first
+  for(let i=0;i<orModels.length;i++) {
+    const model=orModels[i];
     try {
       const ctrl=new AbortController();
       const tid=setTimeout(()=>ctrl.abort(),90000);
@@ -961,12 +956,36 @@ async function callAPI(messages, hasImg) {
       if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||`HTTP ${res.status}`);}
       return {res,model};
     } catch(e) {
-      lastErr=e;
-      if(e.name==='AbortError') lastErr=new Error('Timeout — dobara try karo');
-      if(i<models.length-1){await new Promise(r=>setTimeout(r,1000*(i+1)));}
+      if(e.name==='AbortError') continue;
+      // If 429 or error, try next OR model
+      if(i<orModels.length-1){await new Promise(r=>setTimeout(r,800));}
     }
   }
-  throw lastErr;
+
+  // ✅ Groq fallback — agar OpenRouter ke saare models fail ho jayein
+  if(S.settings.groqKey && !hasImg) {
+    showToast('⚡ Groq pe switch kar rahi hoon...');
+    const groqModels = ['llama-3.3-70b-versatile','llama-3.1-8b-instant','gemma2-9b-it'];
+    for(const gModel of groqModels) {
+      try {
+        const ctrl=new AbortController();
+        const tid=setTimeout(()=>ctrl.abort(),60000);
+        const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+          method:'POST',
+          headers:{'Authorization':`Bearer ${S.settings.groqKey}`,'Content-Type':'application/json'},
+          body:JSON.stringify({model:gModel,messages,stream:true,max_tokens:2048,temperature:0.8}),
+          signal:ctrl.signal
+        });
+        clearTimeout(tid);
+        if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error(e?.error?.message||`HTTP ${res.status}`);}
+        return {res,model:'groq:'+gModel};
+      } catch(e) {
+        continue;
+      }
+    }
+  }
+
+  throw new Error('Saare models fail ho gaye 😕 Thodi der baad try karo.');
 }
 
 // ---- SEND ----
@@ -1052,7 +1071,6 @@ async function sendMsg() {
         if(parts.length>=3){const type=parts[1].trim();const text=parts.slice(2).join(':').trim();if(text)addMem(text,type);}
       }
     });
-    // Auto-detect from user msg
     const lastUser=chat.messages.filter(m=>m.role==='user').slice(-2,-1)[0];
     if(lastUser&&typeof lastUser.content==='string'){
       const u=lastUser.content.toLowerCase();
@@ -1066,8 +1084,7 @@ async function sendMsg() {
     chat.messages[chat.messages.length-1].content=cleanFull;
     chat.messages[chat.messages.length-1].streaming=false;
     chat.messages[chat.messages.length-1].model=model;
-
-    document.getElementById('model-lbl').textContent=model.split('/').pop().replace(':free','');
+    document.getElementById('model-lbl').textContent=model.replace('groq:','').split('/').pop().replace(':free','');
 
   } catch(e) {
     const m=e.message||'';
@@ -1114,7 +1131,7 @@ function renderChat() {
         bodyHtml=`<div class="msg-bubble bubble-user">${content}</div>`;
       } else {
         const proseClass='prose'+(msg.streaming?' stream-cursor':'');
-        bodyHtml=`<div class="msg-bubble bubble-vani"><div class="${proseClass}">${renderMd(visible)}</div>${!msg.streaming?`<div class="tts-bar"><button class="tts-play" data-text="${esc(visible)}" onclick="speakText(this,this.dataset.text,this.nextElementSibling.value)">▶</button><select class="tts-speed"><option value="0.7">🐢</option><option value="0.9" selected>▶</option><option value="1.2">🐇</option></select><span style="font-size:11px;opacity:0.7;">Sunlo</span></div>`:''}${msg.model?`<div style="font-size:10px;color:var(--text2);margin-top:4px;padding-left:2px;">🤖 ${msg.model.split('/').pop().replace(':free','')}</div>`:''}`;
+        bodyHtml=`<div class="msg-bubble bubble-vani"><div class="${proseClass}">${renderMd(visible)}</div>${!msg.streaming?`<div class="tts-bar"><button class="tts-play" data-text="${esc(visible)}" onclick="speakText(this,this.dataset.text,this.nextElementSibling.value)">▶</button><select class="tts-speed"><option value="0.7">🐢</option><option value="0.9" selected>▶</option><option value="1.2">🐇</option></select><span style="font-size:11px;opacity:0.7;">Sunlo</span></div>`:''}${msg.model?`<div style="font-size:10px;color:var(--text2);margin-top:4px;padding-left:2px;">🤖 ${msg.model.replace('groq:','⚡ groq/').split('/').pop().replace(':free','')}</div>`:''}`;
       }
     }
     row.innerHTML=`<div class="msg-av ${isU?'av-user':'av-vani'}">${isU?'👤':'V'}</div><div class="msg-body"><div class="msg-label">${isU?'Sir':'Vani'}</div>${bodyHtml}</div>`;
@@ -1130,7 +1147,7 @@ function renderSidebar() {
   document.getElementById('model-lbl').textContent=S.settings.model.split('/').pop().replace(':free','');
   const list=document.getElementById('chat-list');
   if(!S.chats.length){list.innerHTML='<div style="padding:18px 14px;text-align:center;color:var(--muted);font-size:12px;">No conversations yet</div>';return;}
-  list.innerHTML=S.chats.map(c=>`<div class="chat-item${c.id===S.currentId?' active':''}" ><div class="ci-dot"></div><div class="ci-title" onclick="app.loadChat('${c.id}')">${esc(c.title||'Conversation')}</div><div class="ci-actions"><button class="ci-btn" onclick="app.renameChat(event,'${c.id}')">✏️</button><button class="ci-btn del" onclick="app.deleteChat(event,'${c.id}')">🗑️</button></div></div>`).join('');
+  list.innerHTML=S.chats.map(c=>`<div class="chat-item${c.id===S.currentId?' active':''}"><div class="ci-dot"></div><div class="ci-title" onclick="app.loadChat('${c.id}')">${esc(c.title||'Conversation')}</div><div class="ci-actions"><button class="ci-btn" onclick="app.renameChat(event,'${c.id}')">✏️</button><button class="ci-btn del" onclick="app.deleteChat(event,'${c.id}')">🗑️</button></div></div>`).join('');
 }
 
 // ---- MEMORY ----
@@ -1230,6 +1247,7 @@ const app = {
 
   openSettings(){
     document.getElementById('s-key').value=S.settings.apiKey;
+    document.getElementById('s-groq-key').value=S.settings.groqKey||'';
     document.getElementById('s-model').value=S.settings.model;
     document.getElementById('s-prompt').value=S.settings.prompt;
     document.getElementById('s-retry').value=String(S.settings.retries||2);
@@ -1238,6 +1256,7 @@ const app = {
   closeSettings(){document.getElementById('settings-modal').classList.remove('open');},
   saveSettings(){
     S.settings.apiKey=document.getElementById('s-key').value.trim();
+    S.settings.groqKey=document.getElementById('s-groq-key').value.trim();
     S.settings.model=document.getElementById('s-model').value||'arcee-ai/trinity-large-preview:free';
     S.settings.prompt=document.getElementById('s-prompt').value.trim()||DEFAULT_PROMPT;
     S.settings.retries=parseInt(document.getElementById('s-retry').value)||2;
@@ -1301,10 +1320,8 @@ const app = {
 document.addEventListener('DOMContentLoaded',()=>app.init());
 </script>
 
-<!-- Highlight.js -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-<!-- Marked -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </body>
 </html>
